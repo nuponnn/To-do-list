@@ -1,15 +1,107 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useState } from "react";
+// import reactLogo from './assets/react.svg'
+// import viteLogo from './assets/vite.svg'
+// import heroImg from './assets/hero.png'
+
+import { db } from "../firebase";
+import { collection, addDoc } from "firebase/firestore";
+import { AuthContext } from "../Context/AuthPreventContext";
+import "../assets/css/App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { user, login, signup, logout } = AuthContext();
+
+  const [email, setemail] = useState<string>("");
+  const [password, setpassword] = useState<string>("");
+
+  const [mode, setmode] = useState<"signin" | "signup">("signin");
+  async function Signup(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    await signup(email, password);
+    // Handle signup logic here
+  }
+  async function Signin(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    await login(email, password);
+    // Handle signup logic here
+  }
+  async function addData() {
+    try {
+      await addDoc(collection(db, "todos"), {
+        title: "My Todo",
+      });
+    } catch (e) {
+      console.error("Error adding document: ", e);
+    }
+  }
+  useEffect(() => {
+    console.log("user", user);
+  }, [user]);
 
   return (
     <>
-      <section id="center">
+    <section>
+
+    {mode === "signup" ? (
+      <section>
+        <form onSubmit={Signup}>
+          <div>
+            <input
+              type="text"
+              placeholder="email"
+              value={email}
+              onChange={(e) => setemail(e.target.value)}
+            />
+          </div>
+          <div>
+            {" "}
+            <input
+              type="password"
+              placeholder="password"
+              value={password}
+              onChange={(e) => setpassword(e.target.value)}
+            />
+          </div>
+          <button type="submit">Signup</button>
+        </form>
+      
+      </section>) : (<section>
+        <form onSubmit={Signin}>
+          <div>
+            <input
+              type="text"
+              placeholder="email"
+              value={email}
+              onChange={(e) => setemail(e.target.value)}
+            />
+          </div>
+          <div>
+            {" "}
+            <input
+              type="password"
+              placeholder="password"
+              value={password}
+              onChange={(e) => setpassword(e.target.value)}
+            />
+          </div>
+          <button type="submit">Signin</button>
+        </form>
+       
+      </section>)}
+       <button
+              type="button"
+             
+              onClick={() => setmode(mode === "signin" ? "signup" : "signin")}
+            >
+              {mode === "signin"
+                ? "Don't have an account? Sign Up"
+                : "Already have an account?Sign In"}
+            </button>
+    </section>
+     <button onClick={logout}>logout</button>
+
+      {/* ********************************************** */}
+      {/* <section id="center">
         <div className="hero">
           <img src={heroImg} className="base" width="170" height="179" alt="" />
           <img src={reactLogo} className="framework" alt="React logo" />
@@ -113,9 +205,9 @@ function App() {
       </section>
 
       <div className="ticks"></div>
-      <section id="spacer"></section>
+      <section id="spacer"></section> */}
     </>
-  )
+  );
 }
 
-export default App
+export default App;
