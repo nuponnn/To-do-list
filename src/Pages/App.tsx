@@ -84,6 +84,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
   }
 }
 
+
 function App() {
   const { user, login, signup, logout } = AuthContext();
 
@@ -132,7 +133,7 @@ function App() {
       const logRef = doc(db, "UserData", uid); // สมมติว่าต้องการเก็บ 2 ที่
 
       batch.set(userRef, { email: authState.email, updatedAt: new Date(),role:"User",uid:uid });
-      batch.set(logRef, { email: authState.email, uid:uid });
+      batch.set(logRef, { email: authState.email, uid:uid, updatedAt: new Date() }); // ข้อมูลตัวอย่างสำหรับ log
 
       // 4. ส่งข้อมูลทั้งหมดขึ้น Server พร้อมกัน
       await batch.commit();
