@@ -1,29 +1,55 @@
 import {
   doc,
   collection,
-  updateDoc,
+  // updateDoc,
+  deleteDoc,
   setDoc,
   query,
   orderBy,
   getDocs,
   limit,
+  updateDoc,
+  where,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useReducer } from "react";
 import { AuthContext } from "../Context/AuthPreventContext";
 import { nanoid } from "nanoid";
 
-interface MyData {
-  uid?: string;
-  email?: string;
-}
+// interface MyData {
+//   uid?: string;
+//   email?: string;
+// }
 
 interface Todolist {
-  id?: string;
-  name?: string;
-  value?: string;
-  complete?: boolean;
-  createdAt?: Date;
+  id: string;
+  name: string;
+  value: string;
+  complete: boolean;
+  createdAt: Date;
+  datakey:string;
+}
+type Action =
+  | { type: "SET_TODOS"; payload: Todolist[] }
+  | { type: "ADD_TODO"; payload: Todolist }
+  | { type: "UPDATE_TODO"; payload: { id: string; updates: Partial<Todolist> } }
+  | { type: "DELETE_TODO"; payload: string };
+
+function todoReducer(state: Todolist[], action: Action): Todolist[] {
+  switch (action.type) {
+    case "SET_TODOS":
+      return action.payload;
+    case "ADD_TODO":
+      return [action.payload, ...state];
+    case "UPDATE_TODO":
+      return state.map((t) =>
+        t.id === action.payload.id ? { ...t, ...action.payload.updates } : t,
+      );
+    case "DELETE_TODO":
+      return state.filter((todo) => todo.id !== action.payload);
+    default:
+      return state;
+  }
 }
 
 export default function Todolist() {
@@ -31,9 +57,10 @@ export default function Todolist() {
   useEffect(() => {
     if (!user || !user.uid) return;
   }, [user]);
-  const [todolist, settodolist] = useState<Todolist>({});
-  const [mydataTodolist, setmydataTodolist] = useState<Todolist[]>([]);
-
+  const [todolist, settodolist] = useState<Partial<Todolist>>({});
+  //   const [mydataTodolist, setmydataTodolist] = useState<Todolist[]>([]);
+  // const[todos]
+  const [mydataTodolist, dispatch] = useReducer(todoReducer, []);
   //const Todocol = collection(db, "UserData");
   function getTodosCol() {
     if (!user || !user.uid) throw new Error("User not found");
@@ -42,20 +69,24 @@ export default function Todolist() {
   async function getData() {
     const qtodos = query(
       getTodosCol(),
+      where("datakey", "==", new Date().toISOString().split("T")[0]),
       orderBy("createdAt", "desc"),
       limit(10),
     );
     const docSnap = await getDocs(qtodos);
 
     const newData = docSnap.docs.map((doc) => doc.data()) as Todolist[];
-    setmydataTodolist(newData);
+    dispatch({ type: "SET_TODOS", payload: newData });
   }
+
+  //-------------------- add data to firebase --------------------
   async function addData() {
     try {
       if (!todolist.name || !todolist.value) {
         alert("กรุณากรอกข้อมูลให้ครบถ้วน");
         return;
       }
+      const today = new Date().toISOString().split("T")[0];
       const targetId: string = nanoid(10);
       const newTodolist: Todolist = {
         id: targetId,
@@ -63,11 +94,37 @@ export default function Todolist() {
         value: todolist.value,
         complete: false,
         createdAt: new Date(),
+        datakey :today,
       };
 
       await setDoc(doc(getTodosCol(), targetId), newTodolist);
-      setmydataTodolist((prev) => [newTodolist, ...prev]);
+      dispatch({type:"ADD_TODO",payload:newTodolist});
+      // setmydataTodolist((prev) => [newTodolist, ...prev]);
       alert("Add To Do Success");
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  async function toggleComplete(id: string, currentStats: boolean) {
+    try {
+      await updateDoc(doc(getTodosCol(), id), { complete: !currentStats });
+      dispatch({
+        type: "UPDATE_TODO",
+        payload: { id, updates: { complete: !currentStats } },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  async function DeleteData(id: string ) {
+    try {
+      await deleteDoc(doc(getTodosCol(), id));
+      // setmydataTodolist((prev) => prev.filter((todo) => todo.id !== id));
+      dispatch({
+        type: "DELETE_TODO",
+        payload: id,
+      });
+      alert("Delete To Do Success");
     } catch (error) {
       console.log(error);
     }
@@ -76,10 +133,11 @@ export default function Todolist() {
     const { name, value } = e.target;
     settodolist((prav) => ({ ...prav, [name]: value }));
   }
- 
+
   useEffect(() => {
     getData();
   }, [user?.uid]);
+
   return (
     <div>
       <h1>To Do List</h1>
@@ -95,16 +153,22 @@ export default function Todolist() {
       <button onClick={addData}>Add To Do</button>
       <div>
         <ul>
-          <li>
-            {mydataTodolist.map((todo) => (
-              <div key={todo.id}>
-                <h3>{todo.name}</h3>
-                <p>{todo.value}</p>
-                <br /> 
-              </div>
-            ))}
-          </li>
+          {mydataTodolist.map((todo,index) => (
+            <li key={todo.id}>
+              <label >
+{index+1}
+              <input type="checkbox" checked={todo.complete} onChange={()=>toggleComplete(todo.id!,todo.complete!)} />
+              </label>
+
+              <h3>todo:{todo.name}</h3>
+              <p>{todo.value}</p>
+              <button onClick={() => {if(todo.id){DeleteData(todo.id)}}}>Delete</button>
+              <br />
+              
+            </li>
+          ))}
         </ul>
+        
       </div>
     </div>
   );
