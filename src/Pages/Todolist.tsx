@@ -1,21 +1,8 @@
-import {
-  doc,
-  collection,
-  // updateDoc,
-  deleteDoc,
-  setDoc,
-  query,
-  orderBy,
-  getDocs,
-  limit,
-  updateDoc,
-  where,
-} from "firebase/firestore";
-import { db } from "../firebase";
 import { useState, useEffect, useReducer } from "react";
 import { AuthContext } from "../Context/AuthPreventContext";
 import { nanoid } from "nanoid";
 
+import { services } from "../components/services";
 // interface MyData {
 //   uid?: string;
 //   email?: string;
@@ -58,56 +45,45 @@ export default function Todolist() {
     if (!user || !user.uid) return;
   }, [user]);
   const [todolist, settodolist] = useState<Partial<Todolist>>({});
-  //   const [mydataTodolist, setmydataTodolist] = useState<Todolist[]>([]);
-  // const[todos]
-  const [mydataTodolist, dispatch] = useReducer(todoReducer, []);
-  //const Todocol = collection(db, "UserData");
-  function getTodosCol() {
-    if (!user || !user.uid) throw new Error("User not found");
-    return collection(db, "UserData", user.uid, "todos");
-  }
-  async function getData() {
-    const qtodos = query(
-      getTodosCol(),
-      where("datakey", "==", new Date().toISOString().split("T")[0]),
-      orderBy("createdAt", "desc"),
-      limit(10),
-    );
-    const docSnap = await getDocs(qtodos);
 
-    const newData = docSnap.docs.map((doc) => doc.data()) as Todolist[];
-    dispatch({ type: "SET_TODOS", payload: newData });
+  const [mydataTodolist, dispatch] = useReducer(todoReducer, []);
+
+
+  async function getData() {
+    if (!user?.uid) return;
+    const data = await services.getTodayTodos(user.uid);
+    dispatch({ type: "SET_TODOS", payload: data as Todolist[] });
   }
 
   //-------------------- add data to firebase --------------------
   async function addData() {
     try {
+      if(!user?.uid) return;
       if (!todolist.name || !todolist.value) {
         alert("กรุณากรอกข้อมูลให้ครบถ้วน");
         return;
       }
-      const today = new Date().toISOString().split("T")[0];
-      const targetId: string = nanoid(10);
       const newTodolist: Todolist = {
-        id: targetId,
+        id: nanoid(10),
         name: todolist.name,
         value: todolist.value,
         complete: false,
         createdAt: new Date(),
-        datakey :today,
+        datakey :new Date().toISOString().split("T")[0],
       };
 
-      await setDoc(doc(getTodosCol(), targetId), newTodolist);
+      await services.addTodo(user.uid, newTodolist);
       dispatch({type:"ADD_TODO",payload:newTodolist});
-      // setmydataTodolist((prev) => [newTodolist, ...prev]);
       alert("Add To Do Success");
+      settodolist({});
     } catch (error) {
       console.log(error);
     }
   }
   async function toggleComplete(id: string, currentStats: boolean) {
     try {
-      await updateDoc(doc(getTodosCol(), id), { complete: !currentStats });
+      if(!user?.uid) return;
+      await services.toggleComplete(user.uid, id, !currentStats);
       dispatch({
         type: "UPDATE_TODO",
         payload: { id, updates: { complete: !currentStats } },
@@ -118,7 +94,8 @@ export default function Todolist() {
   }
   async function DeleteData(id: string ) {
     try {
-      await deleteDoc(doc(getTodosCol(), id));
+      if(!user?.uid) return;
+      await services.deleteTodo(user.uid, id);
       // setmydataTodolist((prev) => prev.filter((todo) => todo.id !== id));
       dispatch({
         type: "DELETE_TODO",

@@ -25,9 +25,13 @@ export default function Calendar() {
     { length: daysInMonth },
     (_, i) => i + 1,
   );
+const isCurrentMonth = currentDate.isSame(dayjs(), "month");
+const todayDate = dayjs().date();
 
+console.log(isCurrentMonth,todayDate);
   //set the month name
   const MonthName = currentDate.format("MMMM");
+ 
 
   //set next month
   function nextMonth() {
@@ -57,7 +61,9 @@ export default function Calendar() {
           ))}
 
           {days.map((day) => (
-            <div key={day}>{day}</div>
+            <div key={day}style={isCurrentMonth && day === todayDate? { backgroundColor: "lightblue" }: {}}>
+              {day}
+            </div>
           ))}
           {emtyLastDays.map((_, index) => (
             <div key={index} />
