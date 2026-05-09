@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { lazy } from 'react';
 import MainLayout from "./Layouts/Mainlayout.tsx";
+import dayjs from 'dayjs';
 
 const App = lazy(() => import('./Pages/App.tsx'));
 const Test = lazy(() => import('./Pages/Test.tsx'));
@@ -14,7 +15,8 @@ const router = createBrowserRouter([
       { path: "/", element: <App /> },
       { path: "/test", element: <Test /> },
       { path: "/calendar", element: <Calendar /> }, 
-      {path: "/to-do-list", element: <Todolist />},
+      {path: "/to-do-list/:day", element: <Todolist />},
+      
 
     ],
   },
