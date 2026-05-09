@@ -1,6 +1,7 @@
 import { useState, useEffect, useReducer } from "react";
 import { AuthContext } from "../Context/AuthPreventContext";
 import { nanoid } from "nanoid";
+import { useParams } from "react-router-dom";
 
 import { services } from "../components/services";
 // interface MyData {
@@ -41,17 +42,18 @@ function todoReducer(state: Todolist[], action: Action): Todolist[] {
 
 export default function Todolist() {
   const { user } = AuthContext();
+  const { day } = useParams();
   useEffect(() => {
     if (!user || !user.uid) return;
   }, [user]);
   const [todolist, settodolist] = useState<Partial<Todolist>>({});
 
   const [mydataTodolist, dispatch] = useReducer(todoReducer, []);
-
+const activeDay = day || new Date().toISOString().split("T")[0];
 
   async function getData() {
     if (!user?.uid) return;
-    const data = await services.getTodayTodos(user.uid);
+    const data = await services.getTodayTodos(user.uid,activeDay);
     dispatch({ type: "SET_TODOS", payload: data as Todolist[] });
   }
 
