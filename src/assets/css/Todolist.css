@@ -1,0 +1,22 @@
+.completed{
+    text-decoration: line-through;
+    color: #ccc;
+}
+.todolist-container{
+    display: flex;
+    align-items: center;
+    /* justify-content: center; */
+    /* flex-direction: column; */
+    gap: 10px;
+}
+.todo-content{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.input-edit-container{
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 5px;
+}

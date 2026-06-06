@@ -2,12 +2,8 @@ import { useState, useEffect, useReducer } from "react";
 import { AuthContext } from "../Context/AuthPreventContext";
 import { nanoid } from "nanoid";
 import { useParams } from "react-router-dom";
-
+import "../assets/css/Todolist.css";
 import { services } from "../components/services";
-// interface MyData {
-//   uid?: string;
-//   email?: string;
-// }
 
 interface Todolist {
   id: string;
@@ -15,7 +11,7 @@ interface Todolist {
   value: string;
   complete: boolean;
   createdAt: Date;
-  datakey:string;
+  datekey: string;
 }
 type Action =
   | { type: "SET_TODOS"; payload: Todolist[] }
@@ -33,34 +29,45 @@ function todoReducer(state: Todolist[], action: Action): Todolist[] {
       return state.map((t) =>
         t.id === action.payload.id ? { ...t, ...action.payload.updates } : t,
       );
+
     case "DELETE_TODO":
       return state.filter((todo) => todo.id !== action.payload);
     default:
       return state;
   }
 }
-
+//------------------interface------------------
 export default function Todolist() {
   const { user } = AuthContext();
   const { day } = useParams();
   useEffect(() => {
     if (!user || !user.uid) return;
   }, [user]);
+
   const [todolist, settodolist] = useState<Partial<Todolist>>({});
 
   const [mydataTodolist, dispatch] = useReducer(todoReducer, []);
-const activeDay = day || new Date().toISOString().split("T")[0];
+  const activeDay = day || new Date().toISOString().split("T")[0];
 
+  const [mode, Setmode] = useState<"Add" | "Edit" | "Delete" | null>(null);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editInput, setEditInput] = useState<Partial<Todolist>>({
+    name: "",
+    value: "",
+  });
+
+  //-------------------- fecth data to firebase --------------------
   async function getData() {
     if (!user?.uid) return;
-    const data = await services.getTodayTodos(user.uid,activeDay);
+    const data = await services.getTodayTodos(user.uid, activeDay);
     dispatch({ type: "SET_TODOS", payload: data as Todolist[] });
   }
 
   //-------------------- add data to firebase --------------------
   async function addData() {
     try {
-      if(!user?.uid) return;
+      if (!user?.uid) return;
       if (!todolist.name || !todolist.value) {
         alert("กรุณากรอกข้อมูลให้ครบถ้วน");
         return;
@@ -71,20 +78,54 @@ const activeDay = day || new Date().toISOString().split("T")[0];
         value: todolist.value,
         complete: false,
         createdAt: new Date(),
-        datakey :new Date().toISOString().split("T")[0],
+        datekey: activeDay,
       };
 
       await services.addTodo(user.uid, newTodolist);
-      dispatch({type:"ADD_TODO",payload:newTodolist});
+      dispatch({ type: "ADD_TODO", payload: newTodolist });
       alert("Add To Do Success");
       settodolist({});
     } catch (error) {
       console.log(error);
     }
   }
+  //-------------------- edit data to firebase --------------------
+
+  function handleStartEdit(todo: Todolist) {
+    setEditingId(todo.id);
+    setEditInput({ name: todo.name, value: todo.value }); // ดึงค่าเก่ามาใส่ในฟอร์มทันที
+  }
+
+  async function saveEditData(id: string) {
+    try {
+      if (!user?.uid) return;
+      if (!todolist.name && !todolist.value) {
+        alert("กรุณากรอกข้อมูล");
+        return;
+      }
+
+      const updates: Partial<Todolist> = {
+        name: todolist.name ?? editInput.name,
+        value: todolist.value ?? editInput.value,
+      };
+
+      await services.updateTodo(user.uid, id, updates);
+      dispatch({
+        type: "UPDATE_TODO",
+        payload: { id, updates },
+      });
+      alert("Edit To Do Success");
+      settodolist({});
+      setEditInput({ name: "", value: "" });
+      setEditingId(null);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  //-------------------- toggle complete --------------------
   async function toggleComplete(id: string, currentStats: boolean) {
     try {
-      if(!user?.uid) return;
+      if (!user?.uid) return;
       await services.toggleComplete(user.uid, id, !currentStats);
       dispatch({
         type: "UPDATE_TODO",
@@ -94,9 +135,9 @@ const activeDay = day || new Date().toISOString().split("T")[0];
       console.log(error);
     }
   }
-  async function DeleteData(id: string ) {
+  async function DeleteData(id: string) {
     try {
-      if(!user?.uid) return;
+      if (!user?.uid) return;
       await services.deleteTodo(user.uid, id);
       // setmydataTodolist((prev) => prev.filter((todo) => todo.id !== id));
       dispatch({
@@ -108,6 +149,7 @@ const activeDay = day || new Date().toISOString().split("T")[0];
       console.log(error);
     }
   }
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
     settodolist((prav) => ({ ...prav, [name]: value }));
@@ -121,33 +163,120 @@ const activeDay = day || new Date().toISOString().split("T")[0];
     <div>
       <h1>To Do List</h1>
       <h2>{user?.email}</h2>
-      <label>
-        name:
-        <input type="text" name="name" onChange={(e) => handleChange(e)} />
-      </label>
-      <label>
-        value:
-        <input type="text" name="value" onChange={(e) => handleChange(e)} />
-      </label>
-      <button onClick={addData}>Add To Do</button>
+      <h3>{activeDay}</h3>
+      {mode !== null ? (
+        <>
+          <button onClick={() => Setmode(null)}>Cancel</button>
+        </>
+      ) : null}
+      {mode === null ? (
+        <>
+          <button onClick={() => Setmode("Add")}>Add</button>
+          <button onClick={() => Setmode("Edit")}>Edit</button>
+          <button onClick={() => Setmode("Delete")}>Delete</button>
+        </>
+      ) : mode === "Add" ? (
+        <>
+          <label>
+            name:
+            <input type="text" name="name" onChange={(e) => handleChange(e)} />
+          </label>
+          <label>
+            value:
+            <input type="text" name="value" onChange={(e) => handleChange(e)} />
+          </label>
+          <button onClick={addData}>Add To Do</button>
+        </>
+      ) : null}
+
       <div>
         <ul>
-          {mydataTodolist.map((todo,index) => (
-            <li key={todo.id}>
-              <label >
-{index+1}
-              <input type="checkbox" checked={todo.complete} onChange={()=>toggleComplete(todo.id!,todo.complete!)} />
+          {[...mydataTodolist.sort((a,b)=>{return Number(a.complete)-Number(b.complete)})].map((todo, index) => (
+            <li key={todo.id} className={`todolist-container ${todo.complete ? 'completed' : ''}`}>
+              <label>
+                {index + 1}
+                <input
+                  type="checkbox"
+                  checked={todo.complete}
+                  onChange={() => toggleComplete(todo.id!, todo.complete!)}
+                />
               </label>
+              {mode === "Edit" && !todo.complete ? (
+                <>
+                  {editingId === todo.id ? (
+                    <>
+                    <div className="input-edit-container">
 
-              <h3>todo:{todo.name}</h3>
-              <p>{todo.value}</p>
-              <button onClick={() => {if(todo.id){DeleteData(todo.id)}}}>Delete</button>
+                      <label>
+                        name:
+                        <input
+                          type="text"
+                          name="name"
+                          placeholder={editInput.name}
+                          onChange={(e) => handleChange(e)}
+                        />
+                      </label>
+                      <label>
+                        Subtitles:
+                        <input
+                          type="text"
+                          name="value"
+                          placeholder={editInput.value}
+                          onChange={(e) => handleChange(e)}
+                        />
+                      </label>
+                      <div>
+
+                      <button onClick={() => saveEditData(todo.id!)}>
+                        Save
+                      </button>
+                      <button onClick={() => setEditingId(null)}>Cancel
+
+                      </button>
+                      </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="todo-content">
+                        <h3>todo:{todo.name}</h3>
+                        <p>Subtitles:{todo.value}</p>
+                      </div>
+                      <button onClick={() => handleStartEdit(todo)}>
+                        Edit
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : mode === "Delete" ? (
+                <>
+                <div className="todo-content">
+                    <h3>todo:{todo.name}</h3>
+                    <p>Subtitles:{todo.value}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (todo.id) {
+                        DeleteData(todo.id);
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="todo-content">
+                    <h3>todo:{todo.name}</h3>
+                    <p>Subtitles:{todo.value}</p>
+                  </div>
+                </>
+              )}
+
               <br />
-              
             </li>
           ))}
         </ul>
-        
       </div>
     </div>
   );
