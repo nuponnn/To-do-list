@@ -2,4 +2,9 @@
   display: grid;
   grid-template-columns: repeat(7,1fr);
   gap: 8px;
+  height: 80vh;
+}
+.todolist-content{
+  border: 1px solid black;
+  border-radius: 4px;
 }

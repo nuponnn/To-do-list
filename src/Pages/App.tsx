@@ -113,7 +113,7 @@ function App() {
   //   }
   // }
 
-  console.log("authState", authState);
+
   async function submitHandler(e: React.FormEvent<HTMLFormElement>) {
     try{
     e.preventDefault();
@@ -162,6 +162,7 @@ function App() {
   return (
     <>
       <section>
+        <h1>{authState.Mode === "signin" ? "Sign In" : "Sign Up"}</h1>
         <form onSubmit={submitHandler}>
           <div>
             <input
