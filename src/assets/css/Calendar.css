@@ -1,10 +1,173 @@
-.calendar{
+.calendar {
   display: grid;
-  grid-template-columns: repeat(7,1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 8px;
   height: 80vh;
+  /* เพิ่มแต่งพื้นหลังปฏิทินให้ดูนวลขึ้น */
+  background-color: #ffffff;
+  padding: 12px;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
 }
-.todolist-content{
-  border: 1px solid black;
+
+/* เพิ่มเติม: จัดการสีหัวข้อวันในสัปดาห์ (Sun, Mon...) ให้คลีน */
+.calendar > div:nth-child(-n+7) {
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #94a3b8; /* สีเทาอ่อนแบบละมุน */
+  text-align: center;
+}
+
+.todolist-content {
+  border: none; /* เอาเส้นขอบเดิมออกเพื่อให้ดูโมเดิร์นคลีน */
   border-radius: 4px;
+  font-size: 12px;
+  padding: 2px 6px;
+  position: relative;
+  text-align: left;
+  word-break: break-word;
+  color: #1e293b; /* บังคับสีตัวอักษรเข้ม เพื่อให้อ่านง่ายบนพื้นสีพาสเทล */
+  box-shadow: inset 2px 0 0px 0px rgba(0, 0, 0, 0.1); /* เพิ่มกิมมิคเส้นทึบฝั่งซ้ายจางๆ */
+}
+
+.day-container {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 8px;
+  background-color: #f8fafc; /* เปลี่ยนพื้นหลังกล่องวันเป็นเทาอ่อนมากๆ */
+  border: 1px solid #f1f5f9; /* เส้นขอบจางลง */
+  border-radius: 8px;
+  cursor: pointer;
+  overflow: hidden;
+  box-sizing: border-box;
+  height: 100px;
+  transition: background-color 0.2s, border-color 0.2s; /* เพิ่ม transition ให้โฮเวอร์นุ่มนวลขึ้น */
+}
+
+/* เอฟเฟกต์โฮเวอร์กล่องวันแบบคลีนๆ */
+.day-container:hover {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+}
+
+.day {
+  display: flex;
+  align-self: center;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  margin-bottom: 4px;
+  color: #64748b; /* สีตัวเลขวันปกติแบบซอฟต์ */
+  font-weight: 500;
+}
+
+/* ปรับสีปุ่ม "วันนี้" ที่ดึงมาจาก Inline Style (lightblue) ให้เนียนตาขึ้น */
+.day-container .day[style*="background-color: lightblue"] {
+  background-color: #3b82f6 !important; /* เปลี่ยนจากฟ้าสว่างโร่ เป็นฟ้าแบรนด์พรีเมียม */
+  color: #ffffff !important; /* ตัวอักษรสีขาวตัดกันชัดเจน */
+  font-weight: 600;
+}
+
+.todolist-content-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-grow: 1;
+  overflow-y: auto;
+  text-overflow: ellipsis;
+  width: 100%;
+  max-height: 60px;
+}
+
+/* ปรับสี Scrollbar ด้านในกล่องวันให้กลืนไปกับดีไซน์ */
+.todolist-content-container::-webkit-scrollbar {
+  width: 3px;
+}
+.todolist-content-container::-webkit-scrollbar-thumb {
+  background-color: #e2e8f0; /* เปลี่ยนสีแถบสกรอลล์ให้จางลงอีก */
+  border-radius: 4px;
+}
+
+/* --- animation month slider (เปลี่ยนเฉพาะสี ห้ามยุ่งโครงสร้างแอนิเมชัน) --- */
+.month-slider-view {
+  width: 340px;
+  overflow: hidden;
+  margin: 20px auto;
+  position: relative;
+  background-color: #f1f5f9; /* ทำพื้นหลังรางสไลเดอร์เป็นแคปซูลสีเทาซอฟต์ */
+  padding: 4px;
+  border-radius: 20px;
+}
+
+.slider-track {
+  display: flex;
+  gap: 20px;
+  width: calc((100px * 5) + (20px * 4));
+  transform: translateX(-120px); 
+}
+
+.slider-track.transition-active {
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.slider-item {
+  width: 100px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background-color: transparent;
+  font-size: 13px; /* ปรับขนาดฟอนต์ลงนิดนึงให้ดูเรียบร้อย */
+  color: #64748b; /* เปลี่ยนสีไอเทมที่ไม่ได้เลือกจากเทาซีดเป็นเทาสุภาพ */
+  opacity: 0.5;
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+/* เดือนที่เลือกอยู่ (ตรงกลาง) */
+.slider-item.active {
+  background-color: #ffffff; /* ทำปุ่มไฮไลท์สีขาวนูนเด่นขึ้นมาจากพื้นหลัง */
+  color: #0f172a; /* ตัวอักษรสีเข้มจัด */
+  font-weight: 600;
+  font-size: 14px;
+  opacity: 1;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* --- จังหวะขยับรางวิ่ง (เปลี่ยนเฉพาะสีไฮไลท์ตามด้านบน) --- */
+
+.slider-track.next {
+  transform: translateX(-240px);
+}
+
+/* สีไฮไลท์ตัวถัดไปตอนกำลังวิ่ง */
+.slider-track.next .slider-item:nth-child(4), 
+.slider-track.prev .slider-item:nth-child(2) {
+  background-color: #ffffff;
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 14px;
+  opacity: 1;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.slider-track.prev {
+  transform: translateX(0px);
+}
+
+/* ดับไฟตัวเก่าที่เคยเลือกให้เนียนตา */
+.slider-track.next .slider-item.active,
+.slider-track.prev .slider-item.active {
+  background-color: transparent;
+  color: #64748b;
+  font-size: 13px;
+  opacity: 0.5;
+  box-shadow: none;
 }
