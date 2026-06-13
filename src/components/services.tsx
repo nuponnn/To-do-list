@@ -23,6 +23,7 @@ export interface Todolist {
   complete: boolean;
   createdAt: Date;
   datekey: string;
+  color?: string; // เพิ่มฟิลด์สี (ไม่บังคับ)
 }
 export const services = {
   getTodayTodos: async (uid: string,day: string= new Date().toISOString().split("T")[0]) => {
