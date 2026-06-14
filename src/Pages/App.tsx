@@ -32,15 +32,16 @@ type AuthAction =
 
 const translateError = (errorCode: string): string => {
   const errors: Record<string, string> = {
-    "auth/invalid-credential": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
-    "auth/user-not-found": "ไม่พบผู้ใช้งานนี้ในระบบ",
-    "auth/wrong-password": "รหัสผ่านไม่ถูกต้อง",
-    "auth/invalid-email": "รูปแบบอีเมลไม่ถูกต้อง",
-    "auth/email-already-in-use": "อีเมลนี้ถูกใช้งานไปแล้ว",
-    "auth/weak-password": "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร",
-    "auth/too-many-requests": "ถูกระงับชั่วคราวเนื่องจากพยายามผิดหลายครั้ง",
+    "auth/invalid-credential": "Invalid email or password.",
+    "auth/user-not-found": "User not found in the system.",
+    "auth/wrong-password": "Incorrect password.",
+    "auth/invalid-email": "Invalid email format.",
+    "auth/email-already-in-use": "This email is already in use.",
+    "auth/weak-password": "Password must be at least 6 characters long.",
+    "auth/too-many-requests": "Account temporarily suspended due to multiple failed attempts.",
+    "auth/user-logining": "Please sign out before signing in with a new account.",
   };
-  return errors[errorCode] || "เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่อีกครั้ง";
+  return errors[errorCode] || "Something went wrong. Please try again.";
 };
 const initialState = {
   Mode: "signin" as AuthMode,
@@ -86,40 +87,21 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 
 
 function App() {
-  const { user, login, signup, logout } = AuthContext();
+  const { user, login, signup } = AuthContext();
 
   const [authState, dispatch] = useReducer(authReducer, initialState);
 
-  // const [email, setemail] = useState<string>("");
-  // const [password, setpassword] = useState<string>("");
-
-  // const [mode, setmode] = useState<"signin" | "signup">("signin");
-
-  //  async function Setdata(){
-  //   await setDoc(collection(db, "users"), user.uid, {
-  // }
-
-  //   async function SetData(conlectionName:string,userId:string|undefined, data:object) {
-  //   try {
-  //     bacth.set(doc(collection(db, conlectionName),userId), {
-  //       data
-  //     });
-  //   } catch (error:unknown  ) {
-  //     console.error("Failed to set data:", error);
-  //     dispatch({
-  //       type: "AUTH_ERROR",
-  //       error: (error as { code?: string }).code || "Failed to set data. Please try again.",
-  //     });
-  //   }
-  // }
 
 
   async function submitHandler(e: React.FormEvent<HTMLFormElement>) {
     try{
     e.preventDefault();
+    if (authState.isLoading) return; // ป้องกันการส่งซ้ำขณะกำลังโหลด
+
     dispatch({ type: "AUTH_START" });
 
     const batch = writeBatch(db);
+    
     if (authState.Mode === "signup") {
       if (authState.password !== authState.confirmPassword) {
         throw { code: "passwords-not-match" }; // ส่ง Error ไปที่ catch
@@ -140,7 +122,9 @@ function App() {
 
       dispatch({ type: "AUTH_SUCCESS" });
     } else {
-      
+      if(user){
+        throw { code: "auth/user-logining" }; // ส่ง Error ไปที่ catch
+      }
       await login(authState.email, authState.password);
       dispatch({ type: "AUTH_SUCCESS" });
     }
@@ -151,20 +135,18 @@ function App() {
         error: (error as { code?: string }).code || "",
       });
     }
+   
   }
   
 
-  useEffect(() => {
-    console.log("user", user);
-    
-  }, [user]);
+  
 
   return (
     <>
-      <section>
+      <section className="auth-container">
         <h1>{authState.Mode === "signin" ? "Sign In" : "Sign Up"}</h1>
-        <form onSubmit={submitHandler}>
-          <div>
+        <form onSubmit={submitHandler} className="auth-form">
+          <div className="input-group">
             <input
               type="text"
               placeholder="email"
@@ -177,9 +159,10 @@ function App() {
                 })
               }
             />
+            <label htmlFor="email">Email</label>
           </div>
-          <div>
-            {" "}
+          <div className="input-group">
+            
             <input
               type="password"
               placeholder="password"
@@ -192,9 +175,10 @@ function App() {
                 })
               }
             />
+            <label htmlFor="password">Password</label>
           </div>
-          <div>
-            {authState.Mode === "signup" && (
+          <div className="input-group">
+            {authState.Mode === "signup" && (<>
               <input
                 type="password"
                 placeholder="Confirm Password"
@@ -206,11 +190,13 @@ function App() {
                     value: e.target.value,
                   })
                 }
-              />
+                />
+                <label htmlFor="confirmPassword">Confirm Password</label>
+                </>
             )}
           </div>
-          <div>{authState.error}</div>
-          <button type="submit">
+          {authState.error && <div className="error-box">{authState.error}</div>}
+          <button type="submit" disabled={authState.isLoading} className="submit-button button-auth">
             {authState.Mode !== "signin" ? " Sign Up" : "Sign In"}
           </button>
           <div>
@@ -218,6 +204,7 @@ function App() {
             <button
               type="button"
               onClick={() => dispatch({ type: "SWITCH_MODE" })}
+              className="switch-mode-button button-auth"
             >
               {authState.Mode === "signin"
                 ? "Don't have an account? Sign Up"
@@ -225,7 +212,7 @@ function App() {
             </button>)}
           </div>
         </form>
-        <button onClick={logout}>logout</button>
+        
       </section>
 
       {/* ********************************************** */}

@@ -1,186 +1,132 @@
-
-
-/* .counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
-
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+/* --- Global Reset & Theme Setup --- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-.hero {
-  position: relative;
-
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
-
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
+body {
+  background-color: #f1f5f9; /* ดึงมาจากสีพื้นหลังสไลเดอร์เดือน ให้ความรู้สึกสบายตา */
+  color: #0f172a; /* ใช้สีตัวอักษรเข้มจัดตามจุดทีเลือกไฮไลท์หลัก */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
 }
 
-#center {
+/* --- Auth Card Container --- */
+.auth-container {
+  background-color: #ffffff; /* ขาวนวลสะอาดตา */
+  padding: 2.5rem 2rem;
+  border-radius: 16px; /* ขอบมนระดับเดียวกับตัว Calendar */
+  width: 100%;
+  min-width: 400px;
+  max-width: 800px;
+
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); /* เงาซอฟต์ดึงมาจากตัวปฏิทิน */
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
+  gap: 1.5rem;
+  animation: cardFadeIn 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-#next-steps {
+/* หัวข้อ Sign In / Sign Up */
+.auth-container h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #0f172a;
+  text-align: center;
+  letter-spacing: -0.025em;
+}
+
+/* --- Form & Layout --- */
+.auth-form{
   display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
+  flex-direction: column;
+  gap: 12px; /* รักษาระยะห่างให้ดูไม่หนาแน่นจนเกินไป */
 }
 
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-}
-
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
-}
-
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
-}
-
-.ticks {
-  position: relative;
+.auth-form div {
   width: 100%;
+}
+/* จัดกลุ่ม Input และ Label ให้อยู่ด้วยกันในระนาบ Position: relative */
+.input-group {
+  position: relative;
+  margin-bottom: 14px; /* เพิ่มระยะห่างด้านล่างเล็กน้อยกันตัวหนังสือลอยไปชนกัน */
+  width: 100%;
+}
 
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
+/* ซ่อนข้อความ placeholder ดั้งเดิมด้วยสีโปร่งใส */
+.auth-form input::placeholder {
+  color: transparent !important;
+  opacity: 0 !important; /* ป้องกันบางเบราว์เซอร์ดื้อ */
+}
 
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
-  }
-} */
+/* สำหรับเบราว์เซอร์ Edge / IE เก่า */
+.auth-form input::-ms-input-placeholder {
+  color: transparent !important;
+}
+
+/* สไตล์กล่อง Input ที่ปรับปรุงพื้นหลังและขอบเล็กน้อย */
+.auth-form .input-group input[type="text"],
+.auth-form .input-group input[type="password"] {
+  width: 100%;
+  padding: 12px 14px; /* เผื่อพื้นที่ด้านบนและด้านล่างให้สมดุล */
+  font-size: 14px;
+  color: #1e293b;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0; /* ปรับขอบเข้มขึ้นนิดนึงเพื่อให้เวลาข้อความทับแล้วดูมีมิติ */
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* จัดวาง Label เริ่มต้นให้ทับอยู่ตรงตำแหน่ง Placeholder เดิม */
+.input-group label {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #94a3b8; /* สีเทาอ่อนซอฟต์ตามธีมเดิมของคุณ */
+  padding: 0 4px;
+  background-color: transparent; /* เริ่มต้นเป็นโปร่งแสง */
+  pointer-events: none; /* เพื่อให้สามารถคลิกทะลุตัวหนังสือลงไปที่ Input ได้ */
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1); /* แอนิเมชันตอนเลื่อนขึ้นแบบนุ่มๆ */
+}
+
+/* --- จังหวะสำคัญ: เมื่อคลิกพิมพ์ (Focus) หรือเมื่อมีข้อความพิมพ์อยู่ (Not Placeholder Shown) --- */
+.input-group input:focus ~ label,
+.input-group input:not(:placeholder-shown) ~ label {
+  top: 0; /* เลื่อนขึ้นไปด้านบนสุดของกรอบอินพุต */
+  font-size: 11px; /* ย่อขนาดตัวหนังสือลงให้ดูเรียบร้อยเป็นระเบียบ */
+  font-weight: 600;
+  color: #3b82f6; /* เปลี่ยนเป็นสีฟ้าพรีเมียมตามสีปุ่มหลักเมื่อมีการโฟกัส */
+  background-color: #ffffff; /* ใส่พื้นหลังสีขาวเพื่อตัดเส้นขอบของ Input ให้ขาดออกจากกัน */
+}
+
+/* ถ้าอินพุตไม่ได้โฟกัสแต่มีข้อความข้างในอยู่ ให้รักษาสีเทาสุภาพไว้ ไม่ให้แย่งสายตา */
+.input-group input:not(:placeholder-shown):not(:focus) ~ label {
+  color: #64748b;
+}
+
+/* เมื่อคลิกอินพุต ให้เส้นขอบเปลี่ยนเป็นสีเข้มหรือสีฟ้าพรีเมียม */
+.auth-form .input-group input:focus {
+  outline: none;
+  background-color: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08); /* เพิ่มเงาสะท้อนออร่าฟ้าจางๆ */
+}
+
+/* --- Error Box (กล่องแจ้งเตือนความผิดพลาด) --- */
+.error-box {
+  font-size: 12px;
+  color: #ef4444; /* แดงสว่างระดับโมเดิร์นคัต */
+  background-color: #fef2f2;
+  border-left: 3px solid #ef4444; /* เพิ่มกิมมิคเส้นคลาสสิกเตอร์ฝั่งซ้ายแบบ todolist-content */
+  padding: 8px 12px;
+  border-radius: 4px;
+  text-align: left;
+  font-weight: 500;
+}

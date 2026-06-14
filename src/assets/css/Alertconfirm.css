@@ -1,0 +1,130 @@
+/* ปรับสไตล์พื้นหลังดำโปร่งแสงแบบเบลอ (Glassmorphism นิดๆ) */
+.alert-confirm {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* กล่อง Alert สไตล์คลีน มินิมอล */
+.container-alert {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  animation: scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* หัวข้อหลัก */
+.container-alert h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.25rem;
+}
+
+/* โหมดปัจจุบัน (Add, Edit, Delete) */
+.container-alert h2 {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #666666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1.5rem;
+}
+
+/* แสดงรายละเอียดข้อมูล */
+.container-alert p {
+  font-size: 0.95rem;
+  color: #4a4a4a;
+  margin: 0.5rem 0;
+  background-color: #f8f9fa;
+  padding: 0.75rem;
+  border-radius: 8px;
+  text-align: left;
+  border-left: 4px solid #e2e8f0;
+}
+
+/* ข้อความตัวเชื่อมคำว่า To และแจ้งเตือนไม่มีการเปลี่ยนแปลง */
+.container-alert h4 {
+  font-size: 0.85rem;
+  color: #a0aec0;
+  margin: 0.75rem 0;
+  font-weight: 500;
+}
+
+.container-alert h5 {
+  font-size: 0.95rem;
+  color: #e53e3e;
+  background-color: #fff5f5;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+/* จัดวางกลุ่มปุ่ม */
+.button-container-alert {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+/* สไตล์ปุ่มกด */
+.button-container-alert button {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+/* ปุ่ม Confirm */
+.button-confirm {
+  background-color: #1a1a1a;
+  color: #ffffff;
+}
+
+.button-confirm:hover:not(:disabled) {
+  background-color: #333333;
+}
+
+.button-confirm:disabled {
+  background-color: #e2e8f0;
+  color: #a0aec0;
+  cursor: not-allowed;
+}
+
+/* ปุ่ม Cancel */
+.button {
+  background-color: #f1f3f5;
+  color: #495057;
+}
+
+.button:hover {
+  background-color: #e9ecef;
+}
+
+/* Animations เพิ่มความสมูทตอนเปิด */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
