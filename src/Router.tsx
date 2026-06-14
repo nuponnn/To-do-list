@@ -1,7 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { lazy } from 'react';
 import MainLayout from "./Layouts/Mainlayout.tsx";
-import dayjs from 'dayjs';
+import ProtectedRoute from "./Context/ProtectedRoute.tsx";
 
 const App = lazy(() => import('./Pages/App.tsx'));
 const Calendar = lazy(() => import('./Pages/Calendar.tsx'));
@@ -12,9 +12,12 @@ const router = createBrowserRouter([
     element: <MainLayout />,
     children: [
       { path: "/", element: <App /> },
-      { path: "/calendar", element: <Calendar /> }, 
-      {path: "/to-do-list/:day", element: <Todolist />},
-      
+      { path: "/calendar", element: <ProtectedRoute allowAuthenticated={true} fallbackPath="/">
+          <Calendar />
+        </ProtectedRoute> },
+      { path: "/to-do-list/:day", element: <ProtectedRoute allowAuthenticated={true} fallbackPath="/">
+          <Todolist />
+        </ProtectedRoute> },
 
     ],
   },

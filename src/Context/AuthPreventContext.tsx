@@ -12,7 +12,7 @@ import type {  User,
 
 export interface AuthContextType {
   user: User | null;
-  // loading: boolean;
+  loading: boolean;
   login: (email: string, password: string) => Promise<UserCredential>;
   signup: (email: string, password: string) => Promise<UserCredential>;
   logout: () => Promise<void>;
@@ -25,7 +25,7 @@ export default function AuthPreventContext({
   children: React.ReactNode;
 }) {
   const [user, setuser] = useState<User | null>(null);
-
+ const [loading, setLoading] = useState(true);
   function login(email: string, password: string) {
     return signInWithEmailAndPassword(auth, email, password);
   }
@@ -38,6 +38,7 @@ export default function AuthPreventContext({
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setuser(user);
+      setLoading(false);
       console.log("user", user);
     });
     return () => {
@@ -46,8 +47,14 @@ export default function AuthPreventContext({
   }, []);
   return (
     <>
-      <UserAuthContext.Provider value={{ user, login, signup, logout }}>
-        {children}
+      <UserAuthContext.Provider value={{ user, loading, login, signup, logout }}>
+        {loading ? (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", color: "#64748b", fontFamily: "sans-serif" }}>
+          Loading Application...
+        </div>
+      ) : (
+        children
+      )}
       </UserAuthContext.Provider>
     </>
   );

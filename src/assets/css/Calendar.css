@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
-  height: 80vh;
+  height: 90vh;
   /* เพิ่มแต่งพื้นหลังปฏิทินให้ดูนวลขึ้น */
   background-color: #ffffff;
   padding: 12px;
@@ -44,6 +44,7 @@
   overflow: hidden;
   box-sizing: border-box;
   height: 100px;
+  width: 75px;
   transition: background-color 0.2s, border-color 0.2s; /* เพิ่ม transition ให้โฮเวอร์นุ่มนวลขึ้น */
 }
 
@@ -51,6 +52,7 @@
 .day-container:hover {
   background-color: #ffffff;
   border-color: #cbd5e1;
+  scale: 1.1; /* เพิ่มเอฟเฟกต์ขยายเล็กน้อยเพื่อให้ดูมีชีวิตชีวาขึ้น */
 }
 
 .day {
@@ -99,7 +101,7 @@
   overflow: hidden;
   margin: 20px auto;
   position: relative;
-  background-color: #f1f5f9; /* ทำพื้นหลังรางสไลเดอร์เป็นแคปซูลสีเทาซอฟต์ */
+  background-color: #f1f5f9e5; /* ทำพื้นหลังรางสไลเดอร์เป็นแคปซูลสีเทาซอฟต์ */
   padding: 4px;
   border-radius: 20px;
 }
@@ -129,6 +131,12 @@
   opacity: 0.5;
   border-radius: 16px;
   transition: all 0.3s ease;
+}
+.slider-item:hover {
+ /* เพิ่มเอฟเฟกต์โฮเวอร์ให้ไอเทมที่ไม่ได้เลือกดูมีปฏิสัมพันธ์ */
+  color: #64748b;
+  opacity: 0.7;
+  scale: 1.05;
 }
 
 /* เดือนที่เลือกอยู่ (ตรงกลาง) */
