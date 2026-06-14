@@ -1,18 +1,22 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import "../assets/css/Calendar.css";
-import { getDocs, collection } from "firebase/firestore";
+import { getDocs, collection, query, where,  } from "firebase/firestore";
 import { db } from "../firebase";
 import { AuthContext } from "../Context/AuthPreventContext";
 import { type Todolist } from "../components/services";
+import { useTodo } from "../Context/TodoProvider";
 
 export default function Calendar() {
   const { user } = AuthContext();
   const navigate = useNavigate();
+  const{todosCache,setTodosCache}=useTodo();
   //statefuntion
   const [currentDate, setCurrentDate] = useState(dayjs());
-  const [GetTodolist, setGetTodolist] = useState<Partial<Todolist[]>>();
+
+
+  
   //set day in than month
   const daysInMonth: number = currentDate.daysInMonth();
 
@@ -37,8 +41,7 @@ export default function Calendar() {
   const isCurrentMonth = currentDate.isSame(dayjs(), "month");
   const todayDate = dayjs().date();
 
-  //set the selected date is the date of today or not
-
+  const monthKey = currentDate.format("YYYY-MM");
 
   //animation
   const [direction, setDirection] = useState<"next" | "prev" | "">("");
@@ -52,16 +55,29 @@ export default function Calendar() {
     currentDate.add(1, "month"),
     currentDate.add(2, "month"),
   ];
-  
+
   async function getTodolist() {
     try {
       if (!user?.uid) return;
-      const querySnapshot = await getDocs(getTodosCol(user.uid));
+
+      const startOfMonth = currentDate.startOf("month").format("YYYY-MM-DD");
+      const endOfMonth = currentDate.endOf("month").format("YYYY-MM-DD");
+
+      const todosQuery = query(
+        getTodosCol(user.uid),
+        where("datekey", ">=", startOfMonth),
+        where("datekey", "<=", endOfMonth),
+      );
+      const querySnapshot = await getDocs(todosQuery);
       const newdata = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as Todolist[];
-      setGetTodolist(newdata);
+      
+      setTodosCache((prev) => ({
+        ...prev,
+        [monthKey]: newdata,
+      }));
       console.log("Fetched todos:", newdata);
     } catch (error) {
       console.error("Error fetching todos:", error);
@@ -102,41 +118,45 @@ export default function Calendar() {
 
   useEffect(() => {
     if (!user?.uid) return;
+    if(todosCache[monthKey]){
+      return
+    }
     getTodolist();
+    
     // setGetTodolist();
-  }, []);
-  console.log("todolist", GetTodolist);
+  }, [currentDate]);
+
+
+  console.log("cache", todosCache);
   return (
     <>
-      <section>
-   
+      <section className="Caleder-page">
         <div className="month-slider-view">
-        {/* ใส่คลาส transition-active เมื่ออยู่ในช่วงกำลังเลื่อนเท่านั้น */}
-        <div className={`slider-track ${direction} ${isTransitioning ? "transition-active" : ""}`}>
-          
-          {displayedMonths.map((month, index) => {
-            // ดัชนีที่ 2 คือเดือนปัจจุบัน (ตัวกลางจาก 5 ตัว)
-            const isActive = index === 2;
-            
-            return (
-              <button
-                key={month.format("YYYY-MM")}
-                className={`slider-item ${isActive ? "active" : "side"}`}
-                onClick={() => {
-                  if (index < 2) prevMonth();
-                  if (index > 2) nextMonth();
-                }}
-                disabled={isTransitioning}
-              >
-                {month.format("MMMM")}
-              </button>
-            );
-          })}
+          {/* ใส่คลาส transition-active เมื่ออยู่ในช่วงกำลังเลื่อนเท่านั้น */}
+          <div
+            className={`slider-track ${direction} ${isTransitioning ? "transition-active" : ""}`}
+          >
+            {displayedMonths.map((month, index) => {
+              // ดัชนีที่ 2 คือเดือนปัจจุบัน (ตัวกลางจาก 5 ตัว)
+              const isActive = index === 2;
 
+              return (
+                <button
+                  key={month.format("YYYY-MM")}
+                  className={`slider-item ${isActive ? "active" : "side"}`}
+                  onClick={() => {
+                    if (index < 2) prevMonth();
+                    if (index > 2) nextMonth();
+                  }}
+                  disabled={isTransitioning}
+                >
+                  {month.format("MMMM")}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
-      
-        
+
         <div className="calendar">
           {["sun", "mon", "tue", "wed", "thu", "fri", "sat"].map((day) => (
             <div key={day}>{day}</div>
@@ -145,40 +165,45 @@ export default function Calendar() {
             <div key={index} />
           ))}
 
-          {days.map((day) => (
-            <button
-              key={day}
-              onClick={() => Selectedday(day)}
-              className="day-container"
-            >
-              <div
-                style={
-                  isCurrentMonth && day === todayDate
-                    ? { backgroundColor: "lightblue" }
-                    : {}
-                }
-                className="day"
+          {days.map((day) => {
+            const monthKey = currentDate.format("YYYY-MM");
+            // ดึง List ของเดือนปัจจุบันออกมา ถ้ายังไม่มีให้เป็น Array ว่าง
+            const currentMonthTodos = todosCache[monthKey] || [];
+            return (
+              <button
+                key={day}
+                onClick={() => Selectedday(day)}
+                className="day-container"
               >
-                {day}
-              </div>
-              <div className="todolist-content-container">
-                {Array.isArray(GetTodolist) &&
-                  GetTodolist.filter(
-                    (todo) =>
-                      todo?.datekey ===
-                      currentDate.date(day).format("YYYY-MM-DD"),
-                  ).map((todo) => (
-                    <div
-                      key={todo?.id}
-                      style={{ background: todo?.color ?? "#fff8f8" }}
-                      className="todolist-content"
-                    >
-                      {todo?.name}
-                    </div>
-                  ))}
-              </div>
-            </button>
-          ))}
+                <div
+                  style={
+                    isCurrentMonth && day === todayDate
+                      ? { backgroundColor: "lightblue" }
+                      : {}
+                  }
+                  className="day"
+                >
+                  {day}
+                </div>
+                <div className="todolist-content-container">
+                  {Array.isArray(currentMonthTodos) &&
+                    currentMonthTodos.filter(
+                      (todo) =>
+                        todo?.datekey ===
+                        currentDate.date(day).format("YYYY-MM-DD"),
+                    ).map((todo) => (
+                      <div
+                        key={todo?.id}
+                        style={{ background: todo?.color ?? "#fff8f8" }}
+                        className="todolist-content"
+                      >
+                        {todo?.name}
+                      </div>
+                    ))}
+                </div>
+              </button>
+            );
+          })}
           {emtyLastDays.map((_, index) => (
             <div key={index} />
           ))}

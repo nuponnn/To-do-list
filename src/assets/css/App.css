@@ -22,8 +22,9 @@ body {
   padding: 2.5rem 2rem;
   border-radius: 16px; /* ขอบมนระดับเดียวกับตัว Calendar */
   width: 100%;
-  min-width: 400px;
-  max-width: 800px;
+  max-width: 600px;
+  min-width: 420px;
+ 
 
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); /* เงาซอฟต์ดึงมาจากตัวปฏิทิน */
   display: flex;
@@ -51,6 +52,28 @@ body {
 .auth-form div {
   width: 100%;
 }
+.button-auth{
+  padding: 8px;
+  background-color: #f8fafc; /* เปลี่ยนพื้นหลังกล่องวันเป็นเทาอ่อนมากๆ */
+  border: 1px solid #f1f5f9; /* เส้นขอบจางลง */
+  border-radius: 8px;
+}
+.button-auth:hover {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  scale: 1.05; /* เพิ่มเอฟเฟกต์ขยายเล็กน้อยเพื่อให้ดูมีชีวิตชีวาขึ้น */
+}
+.switch-mode-button{
+  background: none;
+  border: none;
+  color: #3b82f6; /* สีฟ้าพรีเมียมตามสีปุ่มหลัก */
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0;
+  align-self: center;
+ 
+}
+
 /* จัดกลุ่ม Input และ Label ให้อยู่ด้วยกันในระนาบ Position: relative */
 .input-group {
   position: relative;

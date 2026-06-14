@@ -1,18 +1,14 @@
-import { useEffect, useReducer } from "react";
+import { useReducer } from "react";
 // import reactLogo from './assets/react.svg'
 // import viteLogo from './assets/vite.svg'
 // import heroImg from './assets/hero.png'
 
 import { db } from "../firebase";
-import { collection, doc, writeBatch } from "firebase/firestore";
+import {  doc, writeBatch } from "firebase/firestore";
 import { AuthContext } from "../Context/AuthPreventContext";
 import "../assets/css/App.css";
 
-interface MyData {
-  uid?: string;
-  name?: string;
-  updatedAt?: Date;
-}
+
 
 type AuthMode = "signin" | "signup";
 interface AuthState {
@@ -40,6 +36,7 @@ const translateError = (errorCode: string): string => {
     "auth/weak-password": "Password must be at least 6 characters long.",
     "auth/too-many-requests": "Account temporarily suspended due to multiple failed attempts.",
     "auth/user-logining": "Please sign out before signing in with a new account.",
+    "passwords-not-match": "Passwords do not match.",
   };
   return errors[errorCode] || "Something went wrong. Please try again.";
 };
@@ -132,7 +129,7 @@ function App() {
       console.error("Signup error:", error);
       dispatch({
         type: "AUTH_ERROR",
-        error: (error as { code?: string }).code || "",
+        error: (error as { code?: string }).code || "unknown-error",
       });
     }
    
@@ -196,21 +193,23 @@ function App() {
             )}
           </div>
           {authState.error && <div className="error-box">{authState.error}</div>}
-          <button type="submit" disabled={authState.isLoading} className="submit-button button-auth">
+          {authState.isLoading ? "Loading..." :(
+<>
+          
+          <button type="submit" className="submit-button button-auth">
             {authState.Mode !== "signin" ? " Sign Up" : "Sign In"}
           </button>
-          <div>
+          
             {authState.isLoading ? "Loading..." :(
             <button
               type="button"
               onClick={() => dispatch({ type: "SWITCH_MODE" })}
-              className="switch-mode-button button-auth"
+              className="switch-mode-button "
             >
               {authState.Mode === "signin"
                 ? "Don't have an account? Sign Up"
                 : "Already have an account?Sign In"}
-            </button>)}
-          </div>
+            </button>)}</>)}
         </form>
         
       </section>
