@@ -5,6 +5,8 @@ import { useParams } from "react-router-dom";
 import "../assets/css/Todolist.css";
 import { services } from "../components/services";
 import Alertconfirm from "../components/Alertconfirm";
+import { useTodo } from "../Context/TodoProvider";
+import dayjs from "dayjs";
 
 interface Todolist {
   id: string;
@@ -90,6 +92,7 @@ function todoReducer(state: Todolist[], action: Action): Todolist[] {
 export default function Todolist() {
   const { user } = AuthContext();
   const { day } = useParams();
+  const { setTodosCache } = useTodo();
 
   useEffect(() => {
     if (!user || !user.uid) return;
@@ -98,6 +101,7 @@ export default function Todolist() {
   const [todolist, settodolist] = useState<Partial<Todolist>>({});
   const [mydataTodolist, dispatch] = useReducer(todoReducer, []);
   const activeDay = day || new Date().toISOString().split("T")[0];
+
   const [Statusmode, SetStatusmode] = useState<
     "Add" | "Edit" | "Delete" | null
   >(null);
@@ -111,6 +115,7 @@ export default function Todolist() {
     isOpen: boolean;
     Item?: Partial<Todolist>;
   }>({ isOpen: false });
+
   async function getData() {
     if (!user?.uid) return;
     const data = await services.getTodayTodos(user.uid, activeDay);
@@ -137,8 +142,9 @@ export default function Todolist() {
         alert("กรุณากรอกข้อมูลให้ครบถ้วน");
         return;
       }
+      const docId = nanoid(10);
       const newTodolist: Todolist = {
-        id: nanoid(10),
+        id: docId,
         name: todolist.name,
         value: todolist.value,
         complete: false,
@@ -146,9 +152,17 @@ export default function Todolist() {
         datekey: activeDay,
         color: selectedColor,
       };
+      const targetMonth = dayjs(activeDay).format("YYYY-MM");
 
       await services.addTodo(user.uid, newTodolist);
       dispatch({ type: "ADD_TODO", payload: newTodolist });
+      setTodosCache((prev) => {
+        const currentMonthTodos = prev[targetMonth] || [];
+        return {
+          ...prev,
+          [targetMonth]: [...currentMonthTodos, { ...newTodolist, id: docId }],
+        };
+      });
       alert("Add To Do Success");
       settodolist({});
       setSelectedColor("#ffffff");
@@ -173,11 +187,30 @@ export default function Todolist() {
         value: todolist.value ?? editOldDataInput.value,
         color: selectedColor,
       };
-
+      const targetMonth = dayjs(activeDay).format("YYYY-MM");
       await services.updateTodo(user.uid, id, updates);
       dispatch({
         type: "UPDATE_TODO",
         payload: { id, updates },
+      });
+
+      setTodosCache((prev) => {
+        const currentMonthTodos = prev[targetMonth] || [];
+
+        // ใช้ .map() วนลูปหา Todo ตัวที่ ID ตรงกัน แล้วเปลี่ยนข้อมูลมันซะ
+        const updatedTodos = currentMonthTodos.map((todo) => {
+          if (todo.id === id) {
+            //  เอาข้อมูลเก่าขึ้นก่อน แล้วเอา updatedData ทับข้างหลัง
+            // พร้อมกับล็อก id เดิมไว้ท้ายสุดเพื่อความชัวร์
+            return { ...todo, ...updates, id: id };
+          }
+          return todo; // ถ้า ID ไม่ตรง ให้คืนค่าเดิมกลับไป
+        });
+
+        return {
+          ...prev,
+          [targetMonth]: updatedTodos, // เซ็ต Array ที่แก้ไขแล้วกลับเข้าไปในเดือนนั้น
+        };
       });
       alert("Edit To Do Success");
       settodolist({});
@@ -196,6 +229,20 @@ export default function Todolist() {
         type: "UPDATE_TODO",
         payload: { id, updates: { complete: !currentStats } },
       });
+      const targetMonth = dayjs(activeDay).format("YYYY-MM");
+      setTodosCache((prev) => {
+        const currentMonthTodos = prev[targetMonth] || [];
+        const updatedTodos = currentMonthTodos.map((todo) => {
+          if (todo.id === id) {
+            return { ...todo, complete: !currentStats };
+          }
+          return todo;
+        });
+        return {
+          ...prev,
+          [targetMonth]: updatedTodos,
+        };
+      });
     } catch (error) {
       console.log(error);
     }
@@ -208,6 +255,14 @@ export default function Todolist() {
       dispatch({
         type: "DELETE_TODO",
         payload: id,
+      });
+      const targetMonth = dayjs(activeDay).format("YYYY-MM");
+      setTodosCache((prev) => {
+        const currentMonthTodos = prev[targetMonth] || [];
+        return {
+          ...prev,
+          [targetMonth]: currentMonthTodos.filter((todo) => todo.id !== id), // เอาออกเฉพาะ ID นี้
+        };
       });
       alert("Delete To Do Success");
     } catch (error) {
@@ -288,6 +343,7 @@ export default function Todolist() {
                   SetStatusmode(null);
                   settodolist({});
                   setSelectedColor("#ffffff");
+                  setEditingId(null);
                 }}
               >
                 Cancel Task
@@ -401,6 +457,7 @@ export default function Todolist() {
                                 SetStatusmode(null);
                                 settodolist({});
                                 setSelectedColor("#ffffff");
+                                setEditingId(null);
                               }}
                             >
                               Cancel Task

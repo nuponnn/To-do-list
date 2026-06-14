@@ -1,3 +1,7 @@
+.Caleder-page{
+  margin: 70px 1rem 1rem;
+  
+}
 .calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
