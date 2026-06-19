@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import "../assets/css/Calendar.css";
-import { getDocs, collection, query, where,  } from "firebase/firestore";
+import { getDocs, collection, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { AuthContext } from "../Context/AuthPreventContext";
 import { type Todolist } from "../components/services";
@@ -11,12 +11,10 @@ import { useTodo } from "../Context/TodoProvider";
 export default function Calendar() {
   const { user } = AuthContext();
   const navigate = useNavigate();
-  const{todosCache,setTodosCache}=useTodo();
+  const { todosCache, setTodosCache } = useTodo();
   //statefuntion
   const [currentDate, setCurrentDate] = useState(dayjs());
 
-
-  
   //set day in than month
   const daysInMonth: number = currentDate.daysInMonth();
 
@@ -73,12 +71,18 @@ export default function Calendar() {
         id: doc.id,
         ...doc.data(),
       })) as Todolist[];
-      
+
+      const groupedByDay: Record<string, Todolist[]> = {};
+      newdata.forEach((todo) => {
+        if (!groupedByDay[todo.datekey]) groupedByDay[todo.datekey] = [];
+        groupedByDay[todo.datekey].push(todo);
+      });
+
       setTodosCache((prev) => ({
         ...prev,
-        [monthKey]: newdata,
+        [monthKey]: groupedByDay,
       }));
-      console.log("Fetched todos:", newdata);
+      console.log("Fetched todos:", groupedByDay);
     } catch (error) {
       console.error("Error fetching todos:", error);
     }
@@ -118,16 +122,15 @@ export default function Calendar() {
 
   useEffect(() => {
     if (!user?.uid) return;
-    if(todosCache[monthKey]){
-      return
+    if (todosCache[monthKey]) {
+      return;
     }
     getTodolist();
-    
+
     // setGetTodolist();
   }, [currentDate]);
+  console.log(todosCache);
 
-
-  console.log("cache", todosCache);
   return (
     <>
       <section className="Caleder-page">
@@ -166,9 +169,9 @@ export default function Calendar() {
           ))}
 
           {days.map((day) => {
-            const monthKey = currentDate.format("YYYY-MM");
+            const dayKey = currentDate.date(day).format("YYYY-MM-DD");
             // ดึง List ของเดือนปัจจุบันออกมา ถ้ายังไม่มีให้เป็น Array ว่าง
-            const currentMonthTodos = todosCache[monthKey] || [];
+            const todosForDay = todosCache[monthKey]?.[dayKey] || [];
             return (
               <button
                 key={day}
@@ -186,20 +189,15 @@ export default function Calendar() {
                   {day}
                 </div>
                 <div className="todolist-content-container">
-                  {Array.isArray(currentMonthTodos) &&
-                    currentMonthTodos.filter(
-                      (todo) =>
-                        todo?.datekey ===
-                        currentDate.date(day).format("YYYY-MM-DD"),
-                    ).map((todo) => (
-                      <div
-                        key={todo?.id}
-                        style={{ background: todo?.color ?? "#fff8f8" }}
-                        className="todolist-content"
-                      >
-                        {todo?.name}
-                      </div>
-                    ))}
+                  {todosForDay.map((todo) => (
+                    <div
+                      key={todo?.id}
+                      style={{ background: todo?.color ?? "#fff8f8" }}
+                      className="todolist-content"
+                    >
+                      {todo?.name}
+                    </div>
+                  ))}
                 </div>
               </button>
             );

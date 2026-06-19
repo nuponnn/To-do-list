@@ -1,14 +1,15 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext,useState,useContext } from "react";
 import { type Todolist } from "../components/services";
 
 interface TodoContextType {
-  todosCache: Record<string, Todolist[]>;
-  setTodosCache: React.Dispatch<React.SetStateAction<Record<string, Todolist[]>>>;
+  todosCache: Record<string, Record<string, Todolist[]>>;
+  setTodosCache: React.Dispatch<React.SetStateAction<Record<string, Record<string, Todolist[]>>>>;
 }
 const TodoContext = createContext<TodoContextType | undefined>(undefined);
 
 export default function TodoProvider({ children }: { children: React.ReactNode }) {
-  const [todosCache, setTodosCache] = useState<Record<string, Todolist[]>>({});
+  const [todosCache, setTodosCache] = useState<Record<string,Record<string, Todolist[]>>>({});
 
   return (
     <TodoContext.Provider value={{ todosCache, setTodosCache }}>

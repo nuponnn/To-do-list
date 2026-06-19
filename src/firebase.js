@@ -22,9 +22,23 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth();
-connectAuthEmulator(auth, "http://127.0.0.1:9099");
 
 const db = getFirestore();
-connectFirestoreEmulator(db, '127.0.0.1', 8080);
 
+if (typeof window !== "undefined") {
+  const isLocalhost = 
+    window.location.hostname === "localhost" || 
+    window.location.hostname === "127.0.0.1";
+
+  if (isLocalhost) {
+    // 🖥️ ถ้าทำงานบนเครื่องเรา -> ต่อเข้า Emulator
+    connectFirestoreEmulator(db, '127.0.0.1', 8080);
+    connectAuthEmulator(auth, "http://127.0.0.1:9099");
+    console.log("⚡ Connected to Firebase Emulator Suite");
+    alert("Connected to Firebase Emulator Suite")
+  } else {
+    // 🌐 ถ้าทำงานบน Server จริง -> ระบบจะต่อกับ Cloud Firebase ตัวจริงให้เองโดยอัตโนมัติ
+    console.log("🚀 Connected to Production Firebase Cloud");
+  }
+}
 export { db,app ,auth};
