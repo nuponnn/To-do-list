@@ -39,7 +39,6 @@ export default function AuthPreventContext({
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setuser(user);
       setLoading(false);
-      console.log("user", user);
     });
     return () => {
       unsubscribe();

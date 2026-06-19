@@ -3,12 +3,11 @@ import { useReducer } from "react";
 // import viteLogo from './assets/vite.svg'
 // import heroImg from './assets/hero.png'
 
+
 import { db } from "../firebase";
-import {  doc, writeBatch } from "firebase/firestore";
+import { doc, writeBatch } from "firebase/firestore";
 import { AuthContext } from "../Context/AuthPreventContext";
 import "../assets/css/App.css";
-
-
 
 type AuthMode = "signin" | "signup";
 interface AuthState {
@@ -34,8 +33,10 @@ const translateError = (errorCode: string): string => {
     "auth/invalid-email": "Invalid email format.",
     "auth/email-already-in-use": "This email is already in use.",
     "auth/weak-password": "Password must be at least 6 characters long.",
-    "auth/too-many-requests": "Account temporarily suspended due to multiple failed attempts.",
-    "auth/user-logining": "Please sign out before signing in with a new account.",
+    "auth/too-many-requests":
+      "Account temporarily suspended due to multiple failed attempts.",
+    "auth/user-logining":
+      "Please sign out before signing in with a new account.",
     "passwords-not-match": "Passwords do not match.",
   };
   return errors[errorCode] || "Something went wrong. Please try again.";
@@ -83,139 +84,154 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 }
 
 
-function App() {
+
+export default function App() {
   const { user, login, signup } = AuthContext();
 
   const [authState, dispatch] = useReducer(authReducer, initialState);
 
-
-
   async function submitHandler(e: React.FormEvent<HTMLFormElement>) {
-    try{
-    e.preventDefault();
-    if (authState.isLoading) return; // ป้องกันการส่งซ้ำขณะกำลังโหลด
+    try {
+      e.preventDefault();
+      if (authState.isLoading) return; // ป้องกันการส่งซ้ำขณะกำลังโหลด
 
-    dispatch({ type: "AUTH_START" });
+      dispatch({ type: "AUTH_START" });
 
-    const batch = writeBatch(db);
-    
-    if (authState.Mode === "signup") {
-      if (authState.password !== authState.confirmPassword) {
-        throw { code: "passwords-not-match" }; // ส่ง Error ไปที่ catch
+      const batch = writeBatch(db);
+
+      if (authState.Mode === "signup") {
+        if (authState.password !== authState.confirmPassword) {
+          throw { code: "passwords-not-match" }; // ส่ง Error ไปที่ catch
+        }
+
+        const userCredential = await signup(
+          authState.email,
+          authState.password,
+        );
+        const uid = userCredential.user.uid;
+
+        // 3. เตรียมข้อมูล (ไม่ต้อง await เพราะ batch.set ทำงานทันทีในเครื่อง)
+        const userRef = doc(db, "AuthUser", uid);
+        const logRef = doc(db, "UserData", uid); // สมมติว่าต้องการเก็บ 2 ที่
+
+        batch.set(userRef, {
+          email: authState.email,
+          updatedAt: new Date(),
+          role: "User",
+          uid: uid,
+        });
+        batch.set(logRef, {
+          email: authState.email,
+          uid: uid,
+          updatedAt: new Date(),
+        }); // ข้อมูลตัวอย่างสำหรับ log
+
+        // 4. ส่งข้อมูลทั้งหมดขึ้น Server พร้อมกัน
+        await batch.commit();
+
+        dispatch({ type: "AUTH_SUCCESS" });
+      } else {
+        if (user) {
+          throw { code: "auth/user-logining" }; // ส่ง Error ไปที่ catch
+        }
+        await login(authState.email, authState.password);
+        dispatch({ type: "AUTH_SUCCESS" });
       }
-
-      const userCredential = await signup(authState.email, authState.password);
-      const uid = userCredential.user.uid;
-
-      // 3. เตรียมข้อมูล (ไม่ต้อง await เพราะ batch.set ทำงานทันทีในเครื่อง)
-      const userRef = doc(db, "AuthUser", uid);
-      const logRef = doc(db, "UserData", uid); // สมมติว่าต้องการเก็บ 2 ที่
-
-      batch.set(userRef, { email: authState.email, updatedAt: new Date(),role:"User",uid:uid });
-      batch.set(logRef, { email: authState.email, uid:uid, updatedAt: new Date() }); // ข้อมูลตัวอย่างสำหรับ log
-
-      // 4. ส่งข้อมูลทั้งหมดขึ้น Server พร้อมกัน
-      await batch.commit();
-
-      dispatch({ type: "AUTH_SUCCESS" });
-    } else {
-      if(user){
-        throw { code: "auth/user-logining" }; // ส่ง Error ไปที่ catch
-      }
-      await login(authState.email, authState.password);
-      dispatch({ type: "AUTH_SUCCESS" });
-    }
-  } catch (error: unknown) {
+    } catch (error: unknown) {
       console.error("Signup error:", error);
       dispatch({
         type: "AUTH_ERROR",
         error: (error as { code?: string }).code || "unknown-error",
       });
     }
-   
   }
-  
-
-  
 
   return (
-    <>
-      <section className="auth-container">
-        <h1>{authState.Mode === "signin" ? "Sign In" : "Sign Up"}</h1>
-        <form onSubmit={submitHandler} className="auth-form">
-          <div className="input-group">
-            <input
-              type="text"
-              placeholder="email"
-              value={authState.email}
-              onChange={(e) =>
-                dispatch({
-                  type: "SET_FIELD",
-                  field: "email",
-                  value: e.target.value,
-                })
-              }
-            />
-            <label htmlFor="email">Email</label>
-          </div>
-          <div className="input-group">
-            
-            <input
-              type="password"
-              placeholder="password"
-              value={authState.password}
-              onChange={(e) =>
-                dispatch({
-                  type: "SET_FIELD",
-                  field: "password",
-                  value: e.target.value,
-                })
-              }
-            />
-            <label htmlFor="password">Password</label>
-          </div>
-          <div className="input-group">
-            {authState.Mode === "signup" && (<>
-              <input
-                type="password"
-                placeholder="Confirm Password"
-                value={authState.confirmPassword}
-                onChange={(e) =>
-                  dispatch({
-                    type: "SET_FIELD",
-                    field: "confirmPassword",
-                    value: e.target.value,
-                  })
-                }
+    
+        <>
+          <section className="auth-container">
+            <h1>{authState.Mode === "signin" ? "Sign In" : "Sign Up"}</h1>
+            <form onSubmit={submitHandler} className="auth-form">
+              <div className="input-group">
+                <input
+                  type="text"
+                  placeholder="email"
+                  value={authState.email}
+                  onChange={(e) =>
+                    dispatch({
+                      type: "SET_FIELD",
+                      field: "email",
+                      value: e.target.value,
+                    })
+                  }
                 />
-                <label htmlFor="confirmPassword">Confirm Password</label>
-                </>
-            )}
-          </div>
-          {authState.error && <div className="error-box">{authState.error}</div>}
-          {authState.isLoading ? "Loading..." :(
-<>
-          
-          <button type="submit" className="submit-button button-auth">
-            {authState.Mode !== "signin" ? " Sign Up" : "Sign In"}
-          </button>
-          
-            {authState.isLoading ? "Loading..." :(
-            <button
-              type="button"
-              onClick={() => dispatch({ type: "SWITCH_MODE" })}
-              className="switch-mode-button "
-            >
-              {authState.Mode === "signin"
-                ? "Don't have an account? Sign Up"
-                : "Already have an account?Sign In"}
-            </button>)}</>)}
-        </form>
-        
-      </section>
+                <label htmlFor="email">Email</label>
+              </div>
+              <div className="input-group">
+                <input
+                  type="password"
+                  placeholder="password"
+                  value={authState.password}
+                  onChange={(e) =>
+                    dispatch({
+                      type: "SET_FIELD",
+                      field: "password",
+                      value: e.target.value,
+                    })
+                  }
+                />
+                <label htmlFor="password">Password</label>
+              </div>
+              <div className="input-group">
+                {authState.Mode === "signup" && (
+                  <>
+                    <input
+                      type="password"
+                      placeholder="Confirm Password"
+                      value={authState.confirmPassword}
+                      onChange={(e) =>
+                        dispatch({
+                          type: "SET_FIELD",
+                          field: "confirmPassword",
+                          value: e.target.value,
+                        })
+                      }
+                    />
+                    <label htmlFor="confirmPassword">Confirm Password</label>
+                  </>
+                )}
+              </div>
+              {authState.error && (
+                <div className="error-box">{authState.error}</div>
+              )}
+              {authState.isLoading ? (
+                "Loading..."
+              ) : (
+                <>
+                  <button type="submit" className="submit-button button-auth">
+                    {authState.Mode !== "signin" ? " Sign Up" : "Sign In"}
+                  </button>
 
-      {/* ********************************************** */}
-      {/* <section id="center">
+                  {authState.isLoading ? (
+                    "Loading..."
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => dispatch({ type: "SWITCH_MODE" })}
+                      className="switch-mode-button "
+                    >
+                      {authState.Mode === "signin"
+                        ? "Don't have an account? Sign Up"
+                        : "Already have an account?Sign In"}
+                    </button>
+                  )}
+                </>
+              )}
+            </form>
+          </section>
+
+          {/* ********************************************** */}
+          {/* <section id="center">
         <div className="hero">
           <img src={heroImg} className="base" width="170" height="179" alt="" />
           <img src={reactLogo} className="framework" alt="React logo" />
@@ -320,8 +336,7 @@ function App() {
 
       <div className="ticks"></div>
       <section id="spacer"></section> */}
-    </>
+        </>
+  
   );
 }
-
-export default App;

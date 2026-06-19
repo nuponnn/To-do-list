@@ -1,4 +1,4 @@
-import { useState, useEffect, useReducer } from "react";
+import { useState, useEffect, useReducer, useMemo } from "react";
 import { AuthContext } from "../Context/AuthPreventContext";
 import { nanoid } from "nanoid";
 import { useParams } from "react-router-dom";
@@ -17,11 +17,11 @@ interface Todolist {
   datekey: string;
   color?: string;
 }
-type Action =
-  | { type: "SET_TODOS"; payload: Todolist[] }
-  | { type: "ADD_TODO"; payload: Todolist }
-  | { type: "UPDATE_TODO"; payload: { id: string; updates: Partial<Todolist> } }
-  | { type: "DELETE_TODO"; payload: string };
+// type Action =
+//   | { type: "SET_TODOS"; payload: Todolist[] }
+//   | { type: "ADD_TODO"; payload: Todolist }
+//   | { type: "UPDATE_TODO"; payload: { id: string; updates: Partial<Todolist> } }
+//   | { type: "DELETE_TODO"; payload: string };
 
 interface ColorPickerProps {
   selectedColor: string;
@@ -72,35 +72,35 @@ function ColorPicker({ selectedColor, onColorChange }: ColorPickerProps) {
   );
 }
 
-function todoReducer(state: Todolist[], action: Action): Todolist[] {
-  switch (action.type) {
-    case "SET_TODOS":
-      return action.payload;
-    case "ADD_TODO":
-      return [action.payload, ...state];
-    case "UPDATE_TODO":
-      return state.map((t) =>
-        t.id === action.payload.id ? { ...t, ...action.payload.updates } : t,
-      );
-    case "DELETE_TODO":
-      return state.filter((todo) => todo.id !== action.payload);
-    default:
-      return state;
-  }
-}
+// function todoReducer(state: Todolist[], action: Action): Todolist[] {
+//   switch (action.type) {
+//     case "SET_TODOS":
+//       return action.payload;
+//     case "ADD_TODO":
+//       return [action.payload, ...state];
+//     case "UPDATE_TODO":
+//       return state.map((t) =>
+//         t.id === action.payload.id ? { ...t, ...action.payload.updates } : t,
+//       );
+//     case "DELETE_TODO":
+//       return state.filter((todo) => todo.id !== action.payload);
+//     default:
+//       return state;
+//   }
+// }
 
 export default function Todolist() {
-  const { user } = AuthContext();
+  const { user, loading } = AuthContext();
   const { day } = useParams();
-  const { setTodosCache } = useTodo();
+  const { setTodosCache, todosCache } = useTodo();
 
   useEffect(() => {
     if (!user || !user.uid) return;
   }, [user]);
 
   const [todolist, settodolist] = useState<Partial<Todolist>>({});
-  const [mydataTodolist, dispatch] = useReducer(todoReducer, []);
-  const activeDay = day || new Date().toISOString().split("T")[0];
+  // const [mydataTodolist, dispatch] = useReducer(todoReducer, []);
+  const activeDay: string = day ?? new Date().toISOString().split("T")[0];
 
   const [Statusmode, SetStatusmode] = useState<
     "Add" | "Edit" | "Delete" | null
@@ -116,12 +116,36 @@ export default function Todolist() {
     Item?: Partial<Todolist>;
   }>({ isOpen: false });
 
+  const targetMonth = dayjs(day).format("YYYY-MM");
+
+  //-----------------function updateDayCache ------------------
+
+  function updateDayCache(
+    month: string,
+    dayKey: string,
+    updater: (dayTodos: Todolist[]) => Todolist[],
+  ) {
+    setTodosCache((prev) => {
+      const monthBucket = prev[month] || {};
+      const dayTodos = monthBucket[dayKey] || [];
+      return {
+        ...prev,
+        [month]: { ...monthBucket, [dayKey]: updater(dayTodos) },
+      };
+    });
+  }
+
+  //-----------------Get Data ------------------
   async function getData() {
     if (!user?.uid) return;
     const data = await services.getTodayTodos(user.uid, activeDay);
-    dispatch({ type: "SET_TODOS", payload: data as Todolist[] });
+    updateDayCache(targetMonth, activeDay, () => data as Todolist[]);
   }
 
+  const mydataTodolist = useMemo(
+    () => todosCache[targetMonth]?.[activeDay] || [],
+    [todosCache, targetMonth, activeDay],
+  );
   function Isconfirm() {
     switch (Statusmode) {
       case "Add":
@@ -135,6 +159,7 @@ export default function Todolist() {
     }
   }
 
+  //-----------------Add Data ------------------
   async function addData() {
     try {
       if (!user?.uid) return;
@@ -152,17 +177,10 @@ export default function Todolist() {
         datekey: activeDay,
         color: selectedColor,
       };
-      const targetMonth = dayjs(activeDay).format("YYYY-MM");
 
       await services.addTodo(user.uid, newTodolist);
-      dispatch({ type: "ADD_TODO", payload: newTodolist });
-      setTodosCache((prev) => {
-        const currentMonthTodos = prev[targetMonth] || [];
-        return {
-          ...prev,
-          [targetMonth]: [...currentMonthTodos, { ...newTodolist, id: docId }],
-        };
-      });
+      // dispatch({ type: "ADD_TODO", payload: newTodolist });
+      updateDayCache(targetMonth, activeDay, (todo) => [...todo, newTodolist]);
       alert("Add To Do Success");
       settodolist({});
       setSelectedColor("#ffffff");
@@ -171,6 +189,7 @@ export default function Todolist() {
       console.log(error);
     }
   }
+  //-----------------Edit Data ------------------
 
   function handleStartEdit(todo: Todolist) {
     setEditingId(todo.id);
@@ -189,29 +208,14 @@ export default function Todolist() {
       };
       const targetMonth = dayjs(activeDay).format("YYYY-MM");
       await services.updateTodo(user.uid, id, updates);
-      dispatch({
-        type: "UPDATE_TODO",
-        payload: { id, updates },
-      });
+      // dispatch({
+      //   type: "UPDATE_TODO",
+      //   payload: { id, updates },
+      // });
 
-      setTodosCache((prev) => {
-        const currentMonthTodos = prev[targetMonth] || [];
-
-        // ใช้ .map() วนลูปหา Todo ตัวที่ ID ตรงกัน แล้วเปลี่ยนข้อมูลมันซะ
-        const updatedTodos = currentMonthTodos.map((todo) => {
-          if (todo.id === id) {
-            //  เอาข้อมูลเก่าขึ้นก่อน แล้วเอา updatedData ทับข้างหลัง
-            // พร้อมกับล็อก id เดิมไว้ท้ายสุดเพื่อความชัวร์
-            return { ...todo, ...updates, id: id };
-          }
-          return todo; // ถ้า ID ไม่ตรง ให้คืนค่าเดิมกลับไป
-        });
-
-        return {
-          ...prev,
-          [targetMonth]: updatedTodos, // เซ็ต Array ที่แก้ไขแล้วกลับเข้าไปในเดือนนั้น
-        };
-      });
+      updateDayCache(targetMonth, activeDay, (todos) =>
+        todos.map((t) => (t.id === id ? { ...t, ...updates, id } : t)),
+      );
       alert("Edit To Do Success");
       settodolist({});
       setEditOldDataInput({ name: "", value: "" });
@@ -220,50 +224,36 @@ export default function Todolist() {
       console.log(error);
     }
   }
+  //-----------------checkbox Data ------------------
 
   async function toggleComplete(id: string, currentStats: boolean) {
     try {
       if (!user?.uid) return;
       await services.toggleComplete(user.uid, id, !currentStats);
-      dispatch({
-        type: "UPDATE_TODO",
-        payload: { id, updates: { complete: !currentStats } },
-      });
-      const targetMonth = dayjs(activeDay).format("YYYY-MM");
-      setTodosCache((prev) => {
-        const currentMonthTodos = prev[targetMonth] || [];
-        const updatedTodos = currentMonthTodos.map((todo) => {
-          if (todo.id === id) {
-            return { ...todo, complete: !currentStats };
-          }
-          return todo;
-        });
-        return {
-          ...prev,
-          [targetMonth]: updatedTodos,
-        };
-      });
+      // dispatch({
+      //   type: "UPDATE_TODO",
+      //   payload: { id, updates: { complete: !currentStats } },
+      // });
+
+      updateDayCache(targetMonth, activeDay, (todos) =>
+        todos.map((t) =>
+          t.id === id ? { ...t, complete: !currentStats, id } : t,
+        ),
+      );
     } catch (error) {
       console.log(error);
     }
   }
+  //-----------------Delete Data ------------------
 
   async function DeleteData(id: string) {
     try {
       if (!user?.uid) return;
       await services.deleteTodo(user.uid, id);
-      dispatch({
-        type: "DELETE_TODO",
-        payload: id,
-      });
-      const targetMonth = dayjs(activeDay).format("YYYY-MM");
-      setTodosCache((prev) => {
-        const currentMonthTodos = prev[targetMonth] || [];
-        return {
-          ...prev,
-          [targetMonth]: currentMonthTodos.filter((todo) => todo.id !== id), // เอาออกเฉพาะ ID นี้
-        };
-      });
+
+      updateDayCache(targetMonth, activeDay, (todos) =>
+        todos.filter((t) => t.id !== id),
+      );
       alert("Delete To Do Success");
     } catch (error) {
       console.log(error);
@@ -274,13 +264,21 @@ export default function Todolist() {
     const { name, value } = e.target;
     settodolist((prav) => ({ ...prav, [name]: value }));
   }
+  //-----------------useEffect ------------------
 
   useEffect(() => {
+    if (!user?.uid) return;
+    if (todosCache[targetMonth]?.[activeDay]) return;
     getData();
-  }, [user?.uid, activeDay]);
+  }, [user?.uid, targetMonth, activeDay]);
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: "50px" }}>Loading App...</div>
+    );
+  }
 
   return (
-    <>
+    <div className="todo-page-container">
       {Alert.isOpen && (
         <Alertconfirm
           DataOpenAlert={Alert}
@@ -302,7 +300,7 @@ export default function Todolist() {
           <div className="form-card animate-fade">
             <h3>Create New Task</h3>
             <div className="input-group">
-              <label>Task Title:</label>
+              <label className="label-input">Task Title:</label>
               <input
                 type="text"
                 name="name"
@@ -312,7 +310,7 @@ export default function Todolist() {
               />
             </div>
             <div className="input-group">
-              <label>Description:</label>
+              <label className="label-input">Description:</label>
               <input
                 type="text"
                 name="value"
@@ -515,6 +513,6 @@ export default function Todolist() {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
