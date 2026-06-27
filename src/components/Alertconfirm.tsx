@@ -12,21 +12,28 @@ interface Todolist {
   color?: string;
 }
 interface Props {
-  DataOpenAlert: { isOpen: boolean; Item?: Partial<Todolist> };
+  DataOpenAlert: {
+    isOpen: boolean;
+    Item?: Partial<Todolist>;
+    action?: "Add" | "Edit" | "Delete";
+  };
   SetOpenAlert: React.Dispatch<
-    React.SetStateAction<{ isOpen: boolean; Item?: Partial<Todolist> }>
+    React.SetStateAction<{
+      isOpen: boolean;
+      Item?: Partial<Todolist>;
+      action?: "Add" | "Edit" | "Delete";
+    }>
   >;
   Isconfirm: () => void;
-  StatusMode: "Add" | "Edit" | "Delete"|null;
-  OldData?:Partial<Todolist>;
+
+  OldData?: Partial<Todolist>;
 }
 export default function Alertconfirm({
   DataOpenAlert,
   SetOpenAlert,
   Isconfirm,
-  StatusMode,
+
   OldData,
-  
 }: Props) {
   const { Item } = DataOpenAlert;
 
@@ -36,35 +43,44 @@ export default function Alertconfirm({
     Item?.value !== undefined &&
     Item?.value !== null &&
     Item?.value !== "" &&
-    Number(Item?.value) !== Number(OldData?.value);
+    Item?.value !== OldData?.value;
   const isEdited = hasNameChanged || hasValueChanged;
-  const isConfirmDisabled = StatusMode === "Edit" && !isEdited;
+  const isConfirmDisabled =
+    (DataOpenAlert.action === "Edit" && !isEdited) ||
+    (DataOpenAlert.action === "Add" && (!Item?.name || !Item?.value));
+    console.log(DataOpenAlert)
   return (
     <div className="alert-confirm">
       <div className="container-alert">
         <h1>Confirm</h1>
-        <h2>{StatusMode}</h2>
-        {StatusMode === "Add" ? (
+        <h2>{DataOpenAlert.action}</h2>
+        {DataOpenAlert.action === "Add" ? (
           <>
             <p>name :{Item?.name}</p>
             <p>value :{Item?.value}</p>
           </>
-        ) : StatusMode === "Edit" ? (
+        ) : DataOpenAlert.action === "Edit" ? (
           isEdited ? (
             <>
-              <p>name :{Item?.name}</p>
-              <p>value :{Item?.value}</p>
-              <h4>To</h4>
-              {hasNameChanged && <p>New Name: {Item?.name}</p>}
-              {hasValueChanged && <p>New Value: {Item?.value}</p>}
+              {/* แสดงค่าเดิมจาก OldData → ค่าใหม่จาก Item */}
+              {hasNameChanged && (
+                <p>
+                  Name: {OldData?.name} → {Item?.name}
+                </p>
+              )}
+              {hasValueChanged && (
+                <p>
+                  Value: {OldData?.value} → {Item?.value}
+                </p>
+              )}
             </>
           ) : (
             <h5>Not Changes</h5>
           )
-        ) : StatusMode === "Delete" ? (
+        ) : DataOpenAlert.action === "Delete" ? (
           <>
-            <p>name :{OldData?.name}</p>
-            <p>value :{OldData?.value}</p>
+            <p>name :{Item?.name}</p>
+            <p>value :{Item?.value}</p>
           </>
         ) : null}
 
@@ -83,8 +99,6 @@ export default function Alertconfirm({
             className="button"
             onClick={() => {
               SetOpenAlert({ isOpen: false });
-
-              console.log("Cancel");
             }}
           >
             Cancel

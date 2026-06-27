@@ -128,3 +128,64 @@
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+
+/* Responsive: confirm modal - tested targets 320, 480, 720, 1200px */
+@media (max-width: 359px) {
+  .alert-confirm {
+    padding: 12px;
+    align-items: flex-start;
+    padding-top: 88px;
+  }
+
+  .container-alert {
+    max-width: 100%;
+    padding: 1.1rem;
+    border-radius: 12px;
+  }
+
+  .container-alert h1 {
+    font-size: 1.25rem;
+  }
+
+  .container-alert h2 {
+    margin-bottom: 1rem;
+  }
+
+  .container-alert p,
+  .container-alert h5 {
+    font-size: 0.85rem;
+    padding: 0.65rem;
+  }
+
+  .button-container-alert {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+}
+
+@media (min-width: 360px) and (max-width: 599px) {
+  .alert-confirm {
+    padding: 16px;
+  }
+
+  .container-alert {
+    max-width: 360px;
+    padding: 1.4rem;
+  }
+
+  .button-container-alert {
+    flex-direction: column;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 899px) {
+  .container-alert {
+    max-width: 420px;
+  }
+}
+
+@media (min-width: 900px) {
+  .container-alert {
+    max-width: 420px;
+  }
+}
