@@ -1,12 +1,18 @@
-import { useState, useEffect, useReducer, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AuthContext } from "../Context/AuthPreventContext";
 import { nanoid } from "nanoid";
 import { useParams } from "react-router-dom";
-import "../assets/css/Todolist.css";
 import { services } from "../components/services";
 import Alertconfirm from "../components/Alertconfirm";
 import { useTodo } from "../Context/TodoProvider";
 import dayjs from "dayjs";
+import styles from "../assets/css/Todolist.module.css";
+
+const css = (...classNames: Array<string | false | null | undefined>) =>
+  classNames
+    .filter(Boolean)
+    .map((className) => styles[className as string] || className)
+    .join(" ");
 
 interface Todolist {
   id: string;
@@ -16,6 +22,7 @@ interface Todolist {
   createdAt: Date;
   datekey: string;
   color?: string;
+  icon?: string;
 }
 // type Action =
 //   | { type: "SET_TODOS"; payload: Todolist[] }
@@ -37,66 +44,41 @@ function ColorPicker({ selectedColor, onColorChange }: ColorPickerProps) {
   ];
 
   return (
-    <div className="color-picker-container">
-      <span className="color-picker-label">เลือกสีแท็ก:</span>
-      <div className="color-buttons">
+    <div className={css("colorArea")}>
+      <span className={css("colorLabel")}>สีแท็ก</span>
+      <div className={css("colorRow")}>
         {defaultColors.map((c) => (
           <button
             key={c.code}
             type="button"
+            aria-label={c.name}
             onClick={() => onColorChange(c.code)}
-            style={{
-              backgroundColor: c.code,
-              outline: selectedColor === c.code ? "3px solid #000" : "none",
-              outlineOffset: "2px",
-              width: "24px",
-              height: "24px",
-              borderRadius: "50%",
-              border: "none",
-              cursor: "pointer",
-              transition: "transform 0.2s",
-            }}
-            className="color-dot"
+            className={css(
+              "colorDot",
+              selectedColor === c.code && "colorDotActive",
+            )}
+            style={{ backgroundColor: c.code }}
           />
         ))}
-        <label className="custom-color-label">
+        <label className={css("customColor")}>
           <input
             type="color"
             value={selectedColor}
             onChange={(e) => onColorChange(e.target.value)}
           />
-          <span>custom</span>
+          custom
         </label>
       </div>
     </div>
   );
 }
 
-// function todoReducer(state: Todolist[], action: Action): Todolist[] {
-//   switch (action.type) {
-//     case "SET_TODOS":
-//       return action.payload;
-//     case "ADD_TODO":
-//       return [action.payload, ...state];
-//     case "UPDATE_TODO":
-//       return state.map((t) =>
-//         t.id === action.payload.id ? { ...t, ...action.payload.updates } : t,
-//       );
-//     case "DELETE_TODO":
-//       return state.filter((todo) => todo.id !== action.payload);
-//     default:
-//       return state;
-//   }
-// }
-
 export default function Todolist() {
   const { user, loading } = AuthContext();
   const { day } = useParams();
   const { setTodosCache, todosCache } = useTodo();
 
-  useEffect(() => {
-    if (!user || !user.uid) return;
-  }, [user]);
+
 
   const [todolist, settodolist] = useState<Partial<Todolist>>({});
   // const [mydataTodolist, dispatch] = useReducer(todoReducer, []);
@@ -113,6 +95,7 @@ export default function Todolist() {
   const [selectedColor, setSelectedColor] = useState<string>("#ffffff");
   const [Alert, setAlert] = useState<{
     isOpen: boolean;
+      action?: "Add" | "Edit" | "Delete";
     Item?: Partial<Todolist>;
   }>({ isOpen: false });
 
@@ -135,19 +118,12 @@ export default function Todolist() {
     });
   }
 
-  //-----------------Get Data ------------------
-  async function getData() {
-    if (!user?.uid) return;
-    const data = await services.getTodayTodos(user.uid, activeDay);
-    updateDayCache(targetMonth, activeDay, () => data as Todolist[]);
-  }
-
   const mydataTodolist = useMemo(
     () => todosCache[targetMonth]?.[activeDay] || [],
     [todosCache, targetMonth, activeDay],
   );
   function Isconfirm() {
-    switch (Statusmode) {
+    switch (Alert.action) {
       case "Add":
         return addData();
       case "Edit":
@@ -195,6 +171,7 @@ export default function Todolist() {
     setEditingId(todo.id);
     setEditOldDataInput({ name: todo.name, value: todo.value });
     setSelectedColor(todo.color || "#ffffff");
+    settodolist({});
   }
 
   async function saveEditData(id: string) {
@@ -208,10 +185,6 @@ export default function Todolist() {
       };
       const targetMonth = dayjs(activeDay).format("YYYY-MM");
       await services.updateTodo(user.uid, id, updates);
-      // dispatch({
-      //   type: "UPDATE_TODO",
-      //   payload: { id, updates },
-      // });
 
       updateDayCache(targetMonth, activeDay, (todos) =>
         todos.map((t) => (t.id === id ? { ...t, ...updates, id } : t)),
@@ -230,10 +203,6 @@ export default function Todolist() {
     try {
       if (!user?.uid) return;
       await services.toggleComplete(user.uid, id, !currentStats);
-      // dispatch({
-      //   type: "UPDATE_TODO",
-      //   payload: { id, updates: { complete: !currentStats } },
-      // });
 
       updateDayCache(targetMonth, activeDay, (todos) =>
         todos.map((t) =>
@@ -244,6 +213,21 @@ export default function Todolist() {
       console.log(error);
     }
   }
+  //-----------------checkbox Data ------------------
+
+  async function setTodoIcon(id: string, icon: string) {
+    try {
+      if (!user?.uid) return;
+      await services.updateTodo(user.uid, id, { icon });
+
+      updateDayCache(targetMonth, activeDay, (todos) =>
+        todos.map((t) => (t.id === id ? { ...t, icon } : t)),
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   //-----------------Delete Data ------------------
 
   async function DeleteData(id: string) {
@@ -268,9 +252,25 @@ export default function Todolist() {
 
   useEffect(() => {
     if (!user?.uid) return;
-    if (todosCache[targetMonth]?.[activeDay]) return;
+    if (todosCache[targetMonth]) return;
+    //-----------------Get Data ------------------
+    async function getData() {
+      if (!user?.uid) return;
+      const data = await services.getTodos(user.uid, dayjs(activeDay));
+      const groupedByDay: Record<string, Todolist[]> = {};
+      if (!data) return;
+      data.forEach((todo) => {
+        if (!groupedByDay[todo.datekey]) groupedByDay[todo.datekey] = [];
+        groupedByDay[todo.datekey].push(todo);
+      });
+
+      setTodosCache((prev) => ({
+        ...prev,
+        [targetMonth]: groupedByDay,
+      }));
+    }
     getData();
-  }, [user?.uid, targetMonth, activeDay]);
+  }, [user?.uid, targetMonth]);
   if (loading) {
     return (
       <div style={{ textAlign: "center", padding: "50px" }}>Loading App...</div>
@@ -278,65 +278,72 @@ export default function Todolist() {
   }
 
   return (
-    <div className="todo-page-container">
+    <main className={css("page")}>
       {Alert.isOpen && (
         <Alertconfirm
           DataOpenAlert={Alert}
           SetOpenAlert={setAlert}
           Isconfirm={Isconfirm}
-          StatusMode={Statusmode}
+          
           OldData={editOldDataInput}
         />
       )}
-      <div className="todo-page-container">
-        <header className="todo-header">
-          <h1>To Do List</h1>
-          <p className="user-email">{user?.email}</p>
-          <span className="active-date">{activeDay}</span>
+
+      <section className={css("panel")}>
+        <header className={css("header")}>
+          <div className={css("titleBlock")}>
+            <h1 className={css("title")}>To Do List</h1>
+            <p className={css("meta")}>{user?.email}</p>
+          </div>
+          <span className={css("dateBadge")}>{activeDay}</span>
         </header>
 
-        {/* ฟอร์มสำหรับการเพิ่มงาน (Add Mode) */}
-        {Statusmode === "Add" && (
-          <div className="form-card animate-fade">
-            <h3>Create New Task</h3>
-            <div className="input-group">
-              <label className="label-input">Task Title:</label>
-              <input
-                type="text"
-                name="name"
-                value={todolist.name || ""}
-                onChange={handleChange}
-                placeholder="e.g., Homework"
-              />
-            </div>
-            <div className="input-group">
-              <label className="label-input">Description:</label>
-              <input
-                type="text"
-                name="value"
-                value={todolist.value || ""}
-                onChange={handleChange}
-                placeholder="e.g., Page 15 to 20"
-              />
+        {Statusmode === "Add" ? (
+          <section className={css("addBox")}>
+            <h2 className={css("formTitle")}>Create New Task</h2>
+            <div className={css("fieldGrid")}>
+              <label className={css("field")}>
+                <span className={css("label")}>Task Title</span>
+                <input
+                  className={css("input")}
+                  type="text"
+                  name="name"
+                  value={todolist.name || ""}
+                  onChange={handleChange}
+                  placeholder="e.g., Homework"
+                />
+              </label>
+              <label className={css("field")}>
+                <span className={css("label")}>Description</span>
+                <input
+                  className={css("input")}
+                  type="text"
+                  name="value"
+                  value={todolist.value || ""}
+                  onChange={handleChange}
+                  placeholder="e.g., Page 15 to 20"
+                />
+              </label>
             </div>
             <ColorPicker
               selectedColor={selectedColor}
               onColorChange={setSelectedColor}
             />
-            <div className="form-actions">
+            <div className={css("formActions")}>
               <button
-                className="btn btn-primary"
+                className={css("button", "primary")}
                 onClick={() =>
                   setAlert({
                     isOpen: true,
                     Item: { name: todolist.name, value: todolist.value },
+                    action:"Add"
                   })
                 }
               >
                 Save Task
               </button>
               <button
-                className="btn btn-secondary"
+                className={css("button", "secondary")}
                 onClick={() => {
                   SetStatusmode(null);
                   settodolist({});
@@ -344,175 +351,173 @@ export default function Todolist() {
                   setEditingId(null);
                 }}
               >
-                Cancel Task
+                Cancel
               </button>
             </div>
-          </div>
-        )}
-
-        {/* โหมดควบคุมหลักตอนเปิดปกติ */}
-        {Statusmode !== "Add" && (
-          <div className="menu-control-bar">
-            {Statusmode !== null ? (
+          </section>
+        ) : (
+          <div className={css("toolbar")}>
+            {Statusmode === null ? (
+              <>
+                <button
+                  className={css("button", "primary")}
+                  onClick={() => SetStatusmode("Add")}
+                >
+                  Add Task
+                </button>
+                <button
+                  className={css("button", "secondary")}
+                  onClick={() => SetStatusmode("Edit")}
+                >
+                  Edit Task
+                </button>
+                <button
+                  className={css("button", "danger")}
+                  onClick={() => SetStatusmode("Delete")}
+                >
+                  Delete Task
+                </button>
+              </>
+            ) : (
               <button
-                className="btn btn-secondary"
-                onClick={() => SetStatusmode(null)}
+                className={css("button", "secondary")}
+                onClick={() => {
+                  SetStatusmode(null);
+                  setEditingId(null);
+                  settodolist({});
+                }}
               >
                 Exit Manage Mode
               </button>
-            ) : (
-              <div className="action-main-buttons">
-                <button
-                  className="btn btn-primary"
-                  onClick={() => SetStatusmode("Add")}
-                >
-                  ＋ Add Task
-                </button>
-                <button
-                  className="btn btn-outline"
-                  onClick={() => SetStatusmode("Edit")}
-                >
-                  ✏️ Edit Task
-                </button>
-                <button
-                  className="btn btn-danger-outline"
-                  onClick={() => SetStatusmode("Delete")}
-                >
-                  🗑️ Delete Task
-                </button>
-              </div>
             )}
           </div>
         )}
 
-        {/* รายการ Todo Lists */}
-        <div className="todolist-container">
-          <ul className="todo-list-wrapper">
+        <section className={css("listShell")}>
+          <ul className={css("list")}>
             {[...mydataTodolist]
               .sort((a, b) => Number(a.complete) - Number(b.complete))
               .map((todo) => (
                 <li
                   key={todo.id}
-                  className={`todolist-list ${todo.complete ? "completed" : ""}`}
-                  style={{
-                    borderLeft: `6px solid ${todo.color || "#e0e0e0"}`,
-                  }}
+                  className={css("item", todo.complete && "done")}
+                  style={{ borderLeft: `4px solid ${todo.color || "#e5e7eb"}` }}
                 >
-                  <div className="todo-item-left">
-                    <input
-                      type="checkbox"
-                      className="todo-checkbox"
-                      checked={todo.complete}
-                      onChange={() => toggleComplete(todo.id, todo.complete)}
-                    />
-                  </div>
+                  <input
+                    type="checkbox"
+                    className={css("checkbox")}
+                    checked={todo.complete}
+                    onChange={() => toggleComplete(todo.id, todo.complete)}
+                  />
 
-                  <div className="todo-item-body">
-                    {Statusmode === "Edit" && !todo.complete ? (
-                      editingId === todo.id ? (
-                        <div className="input-edit-container animate-fade">
-                          <div className="input-group">
-                            <input
-                              type="text"
-                              name="name"
-                              defaultValue={editOldDataInput.name}
-                              placeholder="Edit title"
-                              onChange={handleChange}
-                            />
-                          </div>
-                          <div className="input-group">
-                            <input
-                              type="text"
-                              name="value"
-                              defaultValue={editOldDataInput.value}
-                              placeholder="Edit description"
-                              onChange={handleChange}
-                            />
-                          </div>
-                          <ColorPicker
-                            selectedColor={selectedColor}
-                            onColorChange={setSelectedColor}
-                          />
-                          <div className="edit-actions">
-                            <button
-                              className="btn btn-success-sm"
-                              onClick={() =>
-                                setAlert({
-                                  isOpen: true,
-                                  Item: {
-                                    id: todo.id,
-                                    name: todolist.name,
-                                    value: todolist.value,
-                                  },
-                                })
-                              }
-                            >
-                              Save Task
-                            </button>
-                            <button
-                              className="btn btn-secondary"
-                              onClick={() => {
-                                SetStatusmode(null);
-                                settodolist({});
-                                setSelectedColor("#ffffff");
-                                setEditingId(null);
-                              }}
-                            >
-                              Cancel Task
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="todo-content">
-                            <h3>{todo.name}</h3>
-                            <p>{todo.value}</p>
-                          </div>
-                          <button
-                            className="btn btn-edit-sm"
-                            onClick={() => handleStartEdit(todo)}
-                          >
-                            Edit
-                          </button>
-                        </>
-                      )
-                    ) : Statusmode === "Delete" ? (
-                      <>
-                        <div className="todo-content">
-                          <h3>{todo.name}</h3>
-                          <p>{todo.value}</p>
-                        </div>
+                  {Statusmode === "Edit" &&
+                  !todo.complete &&
+                  editingId === todo.id ? (
+                    <div className={css("editBox")}>
+                      <div className={css("editFields")}>
+                        <input
+                          className={css("input")}
+                          type="text"
+                          name="name"
+                          defaultValue={editOldDataInput.name}
+                          placeholder="Edit title"
+                          onChange={handleChange}
+                        />
+                        <input
+                          className={css("input")}
+                          type="text"
+                          name="value"
+                          defaultValue={editOldDataInput.value}
+                          placeholder="Edit description"
+                          onChange={handleChange}
+                        />
+                      </div>
+                      <ColorPicker
+                        selectedColor={selectedColor}
+                        onColorChange={setSelectedColor}
+                      />
+                      <div className={css("itemActions")}>
                         <button
-                          className="btn btn-danger-sm"
+                          className={css("button", "success")}
                           onClick={() =>
                             setAlert({
                               isOpen: true,
                               Item: {
                                 id: todo.id,
-                                name: todo.name,
-                                value: todo.value,
+                                name: todolist.name,
+                                value: todolist.value,
+                                
                               },
+                              action: "Edit",
                             })
                           }
                         >
-                          Delete
+                          Save
                         </button>
-                      </>
-                    ) : (
-                      <div className="todo-content">
-                        <h3>{todo.name}</h3>
-                        <p>{todo.value}</p>
+                        <button
+                          className={css("button", "secondary")}
+                          onClick={() => {
+                            SetStatusmode(null);
+                            settodolist({});
+                            setSelectedColor("#ffffff");
+                            setEditingId(null);
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={css("content")}>
+                      <h3 className={css("itemTitle")}>{todo.name}</h3>
+                      <p className={css("itemText")}>{todo.value}</p>
+                    </div>
+                  )}
+
+                  {Statusmode === "Edit" &&
+                    !todo.complete &&
+                    editingId !== todo.id && (
+                      <div className={css("itemActions")}>
+                        <button
+                          className={css("button", "secondary")}
+                          onClick={() => handleStartEdit(todo)}
+                        >
+                          Edit
+                        </button>
                       </div>
                     )}
-                  </div>
+
+                  {Statusmode === "Delete" && (
+                    <div className={css("itemActions")}>
+                      <button
+                        className={css("button", "danger")}
+                        onClick={() =>{
+
+                          setAlert({
+                            isOpen: true,
+                            Item: {
+                              id: todo.id,
+                              name: todo.name,
+                              value: todo.value,
+                            },
+                            action:"Delete"
+                          });
+                          console.log(todo)
+                        }
+                        }
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </li>
               ))}
           </ul>
           {mydataTodolist.length === 0 && (
-            <p className="empty-state">No tasks available for today</p>
+            <p className={css("empty")}>No tasks available for today</p>
           )}
-        </div>
-      </div>
-    </div>
+        </section>
+      </section>
+    </main>
   );
 }

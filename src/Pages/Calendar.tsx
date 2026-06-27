@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import "../assets/css/Calendar.css";
@@ -54,39 +54,7 @@ export default function Calendar() {
     currentDate.add(2, "month"),
   ];
 
-  async function getTodolist() {
-    try {
-      if (!user?.uid) return;
-
-      const startOfMonth = currentDate.startOf("month").format("YYYY-MM-DD");
-      const endOfMonth = currentDate.endOf("month").format("YYYY-MM-DD");
-
-      const todosQuery = query(
-        getTodosCol(user.uid),
-        where("datekey", ">=", startOfMonth),
-        where("datekey", "<=", endOfMonth),
-      );
-      const querySnapshot = await getDocs(todosQuery);
-      const newdata = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Todolist[];
-
-      const groupedByDay: Record<string, Todolist[]> = {};
-      newdata.forEach((todo) => {
-        if (!groupedByDay[todo.datekey]) groupedByDay[todo.datekey] = [];
-        groupedByDay[todo.datekey].push(todo);
-      });
-
-      setTodosCache((prev) => ({
-        ...prev,
-        [monthKey]: groupedByDay,
-      }));
-      console.log("Fetched todos:", groupedByDay);
-    } catch (error) {
-      console.error("Error fetching todos:", error);
-    }
-  }
+  
   //set next month
   function nextMonth() {
     if (isTransitioning) return; // ป้องกันการคลิกรัวๆ ระหว่างเลื่อน
@@ -125,12 +93,95 @@ export default function Calendar() {
     if (todosCache[monthKey]) {
       return;
     }
+    async function getTodolist() {
+    try {
+      if (!user?.uid) return;
+
+      const startOfMonth = currentDate.startOf("month").format("YYYY-MM-DD");
+      const endOfMonth = currentDate.endOf("month").format("YYYY-MM-DD");
+
+      const todosQuery = query(
+        getTodosCol(user.uid),
+        where("datekey", ">=", startOfMonth),
+        where("datekey", "<=", endOfMonth),
+      );
+      const querySnapshot = await getDocs(todosQuery);
+      const newdata = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Todolist[];
+
+      const groupedByDay: Record<string, Todolist[]> = {};
+      newdata.forEach((todo) => {
+        if (!groupedByDay[todo.datekey]) groupedByDay[todo.datekey] = [];
+        groupedByDay[todo.datekey].push(todo);
+      });
+
+      setTodosCache((prev) => ({
+        ...prev,
+        [monthKey]: groupedByDay,
+      }));
+    // console.log("Fetched todos:", groupedByDay);
+    } catch (error) {
+      console.error("Error fetching todos:", error);
+    }
+  }
     getTodolist();
 
     // setGetTodolist();
-  }, [currentDate]);
-  console.log(todosCache);
+  }, [user?.uid, monthKey]);
 
+
+  const calendar = useMemo(() => {
+    return (
+      <div className="calendar">
+        {["sun", "mon", "tue", "wed", "thu", "fri", "sat"].map((day) => (
+          <div key={day}>{day}</div>
+        ))}
+        {emptyfirstDays.map((_, index) => (
+          <div key={index} />
+        ))}
+
+        {days.map((day) => {
+          const dayKey = currentDate.date(day).format("YYYY-MM-DD");
+          // ดึง List ของเดือนปัจจุบันออกมา ถ้ายังไม่มีให้เป็น Array ว่าง
+          const todosForDay = todosCache[monthKey]?.[dayKey] || [];
+          return (
+            <button
+              key={day}
+              onClick={() => Selectedday(day)}
+              className="day-container"
+            >
+              <div
+                style={
+                  isCurrentMonth && day === todayDate
+                    ? { backgroundColor: "lightblue" }
+                    : {}
+                }
+                className="day"
+              >
+                {day}
+              </div>
+              <div className="todolist-content-container">
+                {todosForDay.map((todo) => (
+                  <div
+                    key={todo?.id}
+                    style={{ background: todo?.color ?? "#fff8f8" }}
+                    className="todolist-content"
+                  >
+                    {todo?.name}
+                  </div>
+                ))}
+              </div>
+            </button>
+          );
+        })}
+        {emtyLastDays.map((_, index) => (
+          <div key={index} />
+        ))}
+      </div>
+    );
+  }, [currentDate, todosCache, monthKey]);
   return (
     <>
       <section className="Caleder-page">
@@ -159,53 +210,7 @@ export default function Calendar() {
             })}
           </div>
         </div>
-
-        <div className="calendar">
-          {["sun", "mon", "tue", "wed", "thu", "fri", "sat"].map((day) => (
-            <div key={day}>{day}</div>
-          ))}
-          {emptyfirstDays.map((_, index) => (
-            <div key={index} />
-          ))}
-
-          {days.map((day) => {
-            const dayKey = currentDate.date(day).format("YYYY-MM-DD");
-            // ดึง List ของเดือนปัจจุบันออกมา ถ้ายังไม่มีให้เป็น Array ว่าง
-            const todosForDay = todosCache[monthKey]?.[dayKey] || [];
-            return (
-              <button
-                key={day}
-                onClick={() => Selectedday(day)}
-                className="day-container"
-              >
-                <div
-                  style={
-                    isCurrentMonth && day === todayDate
-                      ? { backgroundColor: "lightblue" }
-                      : {}
-                  }
-                  className="day"
-                >
-                  {day}
-                </div>
-                <div className="todolist-content-container">
-                  {todosForDay.map((todo) => (
-                    <div
-                      key={todo?.id}
-                      style={{ background: todo?.color ?? "#fff8f8" }}
-                      className="todolist-content"
-                    >
-                      {todo?.name}
-                    </div>
-                  ))}
-                </div>
-              </button>
-            );
-          })}
-          {emtyLastDays.map((_, index) => (
-            <div key={index} />
-          ))}
-        </div>
+        {calendar}
       </section>
     </>
   );

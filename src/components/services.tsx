@@ -7,10 +7,10 @@ import {
   deleteDoc,
   query,
   where,
-  orderBy,
-  limit,
+
 } from "firebase/firestore";
 import { db } from "../firebase";
+import dayjs from "dayjs";
 
 
 // ฟังก์ชัน Helper ภายในไฟล์ (ไม่ต้อง export)
@@ -24,17 +24,26 @@ export interface Todolist {
   createdAt: Date;
   datekey: string;
   color?: string; // เพิ่มฟิลด์สี (ไม่บังคับ)
+  icon?:string
+
 }
 export const services = {
-  getTodayTodos: async (uid: string,day: string= new Date().toISOString().split("T")[0]) => {
-    const qtodos = query(
-      getTodosCol(uid),
-      where("datekey", "==", day),
-      orderBy("createdAt", "desc"),
-      limit(10),
-    );
-    const docSnap = await getDocs(qtodos);
-    return docSnap.docs.map((doc) => doc.data());
+  getTodos: async (uid: string,day:dayjs.Dayjs|undefined=dayjs()) => {
+    if (!uid) return;
+
+      const startOfMonth = day.startOf("month").format("YYYY-MM-DD");
+      const endOfMonth = day.endOf("month").format("YYYY-MM-DD");
+
+      const todosQuery = query(
+        getTodosCol(uid),
+        where("datekey", ">=", startOfMonth),
+        where("datekey", "<=", endOfMonth),
+      );
+      const querySnapshot = await getDocs(todosQuery);
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Todolist[];
   },
   addTodo: async (uid: string, todolist: Todolist) => {
     await setDoc(doc(getTodosCol(uid), todolist.id), todolist);

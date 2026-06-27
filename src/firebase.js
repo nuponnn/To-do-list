@@ -1,7 +1,13 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import {
+  getFirestore,
+  connectFirestoreEmulator,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from "firebase/firestore";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -15,30 +21,36 @@ const firebaseConfig = {
   storageBucket: "to-do-list-ea02b.firebasestorage.app",
   messagingSenderId: "104305496767",
   appId: "1:104305496767:web:dd220456c91bbfff7e6c0a",
-  measurementId: "G-83P9F7PSW0"
+  measurementId: "G-83P9F7PSW0",
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const auth = getAuth();
+const auth = getAuth(app);
 
-const db = getFirestore();
+const db = initializeFirestore(app, {
+  cache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager(), // ✅ แก้ปัญหา multi-tab ได้เลย
+  }),
+});
 
 if (typeof window !== "undefined") {
-  const isLocalhost = 
-    window.location.hostname === "localhost" || 
+  const isLocalhost =
+    window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1";
 
   if (isLocalhost) {
     // 🖥️ ถ้าทำงานบนเครื่องเรา -> ต่อเข้า Emulator
-    connectFirestoreEmulator(db, '127.0.0.1', 8080);
+    connectFirestoreEmulator(db, "127.0.0.1", 8080);
     connectAuthEmulator(auth, "http://127.0.0.1:9099");
     console.log("⚡ Connected to Firebase Emulator Suite");
-    alert("Connected to Firebase Emulator Suite")
-  } else {
-    // 🌐 ถ้าทำงานบน Server จริง -> ระบบจะต่อกับ Cloud Firebase ตัวจริงให้เองโดยอัตโนมัติ
-    console.log("🚀 Connected to Production Firebase Cloud");
+  }  else {
+    // ✅ Analytics เปิดแค่ตอน production จริงๆ
+    getAnalytics(app);
+   
   }
+ 
+
 }
-export { db,app ,auth};
+
+export { db, app, auth };

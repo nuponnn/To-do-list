@@ -8,7 +8,7 @@
   border-radius: 16px; /* ขอบมนระดับเดียวกับตัว Calendar */
   width: 100%;
   max-width: 600px;
-  min-width: 420px;
+  min-width: 0;
  
 
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); /* เงาซอฟต์ดึงมาจากตัวปฏิทิน */
@@ -60,7 +60,7 @@
 }
 
 /* จัดกลุ่ม Input และ Label ให้อยู่ด้วยกันในระนาบ Position: relative */
-.auth-container .input-group {
+.auth-form .input-group {
   position: relative;
   margin-bottom: 14px; /* เพิ่มระยะห่างด้านล่างเล็กน้อยกันตัวหนังสือลอยไปชนกัน */
   width: 100%;
@@ -91,7 +91,7 @@
 }
 
 /* จัดวาง Label เริ่มต้นให้ทับอยู่ตรงตำแหน่ง Placeholder เดิม */
-.auth-container .input-group label {
+.auth-form .input-group label {
   position: absolute;
   left: 14px;
   top: 50%;
@@ -105,8 +105,8 @@
 }
 
 /* --- จังหวะสำคัญ: เมื่อคลิกพิมพ์ (Focus) หรือเมื่อมีข้อความพิมพ์อยู่ (Not Placeholder Shown) --- */
-.auth-container .input-group input:focus ~ label,
-.auth-container .input-group input:not(:placeholder-shown) ~ label {
+.auth-form .input-group input:focus ~ label,
+.auth-form .input-group input:not(:placeholder-shown) ~ label{
   top: 0; /* เลื่อนขึ้นไปด้านบนสุดของกรอบอินพุต */
   font-size: 11px; /* ย่อขนาดตัวหนังสือลงให้ดูเรียบร้อยเป็นระเบียบ */
   font-weight: 600;
@@ -115,7 +115,7 @@
 }
 
 /* ถ้าอินพุตไม่ได้โฟกัสแต่มีข้อความข้างในอยู่ ให้รักษาสีเทาสุภาพไว้ ไม่ให้แย่งสายตา */
-.auth-container .input-group input:not(:placeholder-shown):not(:focus) ~ label {
+.auth-form .input-group input:not(:placeholder-shown):not(:focus) ~ label {
   color: #64748b;
 }
 
@@ -137,4 +137,66 @@
   border-radius: 4px;
   text-align: left;
   font-weight: 500;
+}
+
+/* Responsive: auth page - tested targets 320, 480, 720, 1200px */
+@media (max-width: 359px) {
+  .auth-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 1.25rem 1rem;
+    border-radius: 12px;
+    gap: 1rem;
+  }
+
+  .auth-container h1 {
+    font-size: 1.25rem;
+  }
+
+  .auth-form {
+    gap: 10px;
+  }
+
+  .auth-form .input-group {
+    margin-bottom: 10px;
+  }
+
+  .auth-form .input-group input[type="text"],
+  .auth-form .input-group input[type="password"] {
+    padding: 11px 12px;
+    font-size: 13px;
+  }
+
+  .button-auth {
+    width: 100%;
+  }
+
+  .switch-mode-button {
+    line-height: 1.35;
+  }
+}
+
+@media (min-width: 360px) and (max-width: 599px) {
+  .auth-container {
+    width: min(100%, 420px);
+    padding: 1.75rem 1.25rem;
+    border-radius: 14px;
+  }
+
+  .button-auth {
+    width: 100%;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 899px) {
+  .auth-container {
+    width: min(100%, 520px);
+    padding: 2.25rem 1.75rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .auth-container {
+    width: min(100%, 600px);
+  }
 }
