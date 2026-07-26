@@ -10,7 +10,7 @@ const TodoContext = createContext<TodoContextType | undefined>(undefined);
 
 export default function TodoProvider({ children }: { children: React.ReactNode }) {
   const [todosCache, setTodosCache] = useState<Record<string,Record<string, Todolist[]>>>({});
-
+  console.log("todosCache", todosCache); // ตรวจสอบค่าของ todosCache
   return (
     <TodoContext.Provider value={{ todosCache, setTodosCache }}>
       {children}

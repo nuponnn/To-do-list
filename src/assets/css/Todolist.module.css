@@ -16,9 +16,7 @@
 }
 
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: grid;
   gap: 16px;
   margin-bottom: 18px;
 }
@@ -41,8 +39,17 @@
   overflow-wrap: anywhere;
 }
 
+/* เหตุผล: คุมปุ่มเปลี่ยนวันไว้ในกรอบ Todolist ด้วย grid 3 ช่องเท่ากัน เพื่อให้ซ้าย-กลาง-ขวาสมดุลทุกขนาดจอ */
+.dateControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
 .dateBadge {
-  flex: 0 0 auto;
+  justify-self: center;
   border: 1px solid #e0f2fe;
   border-radius: 999px;
   background: #f0f9ff;
@@ -50,6 +57,21 @@
   padding: 6px 10px;
   font-size: 12px;
   font-weight: 600;
+}
+
+.dateButton {
+  width: min(100%, 104px);
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.dateButtonPrev {
+  justify-self: start;
+}
+
+.dateButtonNext {
+  justify-self: end;
 }
 
 .toolbar {
@@ -294,6 +316,39 @@
   font-size: 14px;
 }
 
+.daycontrol {
+  
+  
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.daycontrol button {
+  min-height: 34px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1e293b;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+@media (hover: hover) and (pointer: fine){
+  .daycontrol button:hover {
+    background-color: #e0f2fe;
+    border-color: #007bff;
+    color: #007bff;
+    transform: translateY(-2px);
+  }
+}
+@media (hover: none) and (pointer: coarse){
+  .daycontrol button:active {
+     background-color: #e0f2fe;
+    border-color: #007bff;
+    color: #007bff;
+    transform: translateY(0);
+  }
+}
+
+
 @media (max-width: 359px) {
   .page {
     margin-top: 72px;
@@ -320,8 +375,19 @@
     display: grid;
   }
 
+  .dateControls {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 6px;
+  }
+
   .button {
     width: 100%;
+  }
+
+  .dateButton {
+    width: min(100%, 82px);
+    padding: 6px 8px;
+    font-size: 11px;
   }
 
   .item {
@@ -359,8 +425,17 @@
     display: grid;
   }
 
+  .dateControls {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 8px;
+  }
+
   .button {
     width: 100%;
+  }
+
+  .dateButton {
+    width: min(100%, 94px);
   }
 
   .item {
@@ -383,3 +458,4 @@
     width: min(100%, 760px);
   }
 }
+
