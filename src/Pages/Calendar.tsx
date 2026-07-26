@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import "../assets/css/Calendar.css";
@@ -83,11 +83,11 @@ export default function Calendar() {
     }, transitionDuration);
   }
 
-  function Selectedday(day: number) {
+  const Selectedday = useCallback((day: number) => {
     const dateStr = currentDate.date(day).format("YYYY-MM-DD");
     // สั่งเปลี่ยนหน้าไปยัง Path ที่เราตั้งไว้ พร้อมแนบวันที่ไปด้วย
-    navigate(`/to-do-list/${dateStr}`);
-  }
+    navigate("/to-do-list/" + dateStr);
+  }, [currentDate, navigate]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -120,7 +120,7 @@ export default function Calendar() {
     getTodolist();
 
     // setGetTodolist();
-  }, [user?.uid, monthKey]);
+  }, [user?.uid, monthKey, month, setTodosCache, todosCache, year]);
 
   const calendar = useMemo(() => {
     // เหตุผล: ใช้เฉพาะตอนแสดงผลใน Calendar เพื่อดัน todo ที่มีสีจริงขึ้นบนสุด โดยไม่เปลี่ยนลำดับข้อมูลต้นฉบับใน cache
@@ -181,7 +181,17 @@ export default function Calendar() {
         ))}
       </div>
     );
-  }, [currentDate, todosCache, monthKey]);
+  }, [
+    Selectedday,
+    currentDate,
+    days,
+    emptyfirstDays,
+    emtyLastDays,
+    isCurrentMonth,
+    monthKey,
+    todayDate,
+    todosCache,
+  ]);
   return (
     <>
       <section className="Caleder-page">

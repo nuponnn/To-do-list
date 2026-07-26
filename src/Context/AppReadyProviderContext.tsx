@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { useContext,useEffect,useState,createContext } from "react"
 
 const AppReadyContext=createContext<boolean>(false);
