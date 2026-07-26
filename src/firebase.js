@@ -44,6 +44,7 @@ if (typeof window !== "undefined") {
     connectFirestoreEmulator(db, "127.0.0.1", 8080);
     connectAuthEmulator(auth, "http://127.0.0.1:9099");
     console.log("⚡ Connected to Firebase Emulator Suite");
+    alert("⚡ Connected to Firebase Emulator Suite");
   }  else {
     // ✅ Analytics เปิดแค่ตอน production จริงๆ
     getAnalytics(app);

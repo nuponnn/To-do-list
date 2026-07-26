@@ -1,16 +1,8 @@
 import React from "react";
 // import type {  Todolist } from "../components/services";
 import "../assets/css/Alertconfirm.css";
+import { type Todolist } from "./services";
 
-interface Todolist {
-  id: string;
-  name: string;
-  value: string;
-  complete: boolean;
-  createdAt: Date;
-  datekey: string;
-  color?: string;
-}
 interface Props {
   DataOpenAlert: {
     isOpen: boolean;
@@ -32,23 +24,24 @@ export default function Alertconfirm({
   DataOpenAlert,
   SetOpenAlert,
   Isconfirm,
-
   OldData,
 }: Props) {
   const { Item } = DataOpenAlert;
 
   const hasNameChanged =
-    Item?.name !== undefined && Item?.name !== null && Item?.name !== "";
-  const hasValueChanged =
-    Item?.value !== undefined &&
-    Item?.value !== null &&
-    Item?.value !== "" &&
-    Item?.value !== OldData?.value;
-  const isEdited = hasNameChanged || hasValueChanged;
+    Item?.name !== undefined && Item?.name !== OldData?.name;
+
+  const hasValueChanged = Item?.name !== undefined && Item?.value !== OldData?.value;
+
+  const hasColorChanged =
+    Item?.color !== undefined && Item?.color !== OldData?.color;
+  const isEdited = hasNameChanged || hasValueChanged || hasColorChanged;
   const isConfirmDisabled =
     (DataOpenAlert.action === "Edit" && !isEdited) ||
-    (DataOpenAlert.action === "Add" && (!Item?.name || !Item?.value));
-    console.log(DataOpenAlert)
+    (DataOpenAlert.action === "Add" && !Item?.name);
+  console.log(OldData, "oldData");
+  console.log(Item, "newData");
+
   return (
     <div className="alert-confirm">
       <div className="container-alert">
@@ -57,7 +50,19 @@ export default function Alertconfirm({
         {DataOpenAlert.action === "Add" ? (
           <>
             <p>name :{Item?.name}</p>
-            <p>value :{Item?.value}</p>
+            {Item?.value && <p>value :{Item?.value}</p>}
+
+            {Item?.color && (
+              <p>
+                Color:
+                <span
+                  className="color-circle"
+                  style={{
+                    backgroundColor: Item.color,
+                  }}
+                />
+              </p>
+            )}
           </>
         ) : DataOpenAlert.action === "Edit" ? (
           isEdited ? (
@@ -71,6 +76,24 @@ export default function Alertconfirm({
               {hasValueChanged && (
                 <p>
                   Value: {OldData?.value} → {Item?.value}
+                </p>
+              )}
+              {hasColorChanged && (
+                <p>
+                  Color:
+                  <span
+                    className="color-circle"
+                    style={{
+                      backgroundColor: OldData?.color,
+                    }}
+                  />
+                  →
+                  <span
+                  className="color-circle"
+                    style={{
+                      backgroundColor: Item?.color,
+                    }}
+                  />
                 </p>
               )}
             </>

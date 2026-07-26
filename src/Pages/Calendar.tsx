@@ -2,10 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import "../assets/css/Calendar.css";
-import { getDocs, collection, query, where } from "firebase/firestore";
-import { db } from "../firebase";
 import { AuthContext } from "../Context/AuthPreventContext";
-import { type Todolist } from "../components/services";
+import { services, type Todolist } from "../components/services";
 import { useTodo } from "../Context/TodoProvider";
 
 export default function Calendar() {
@@ -18,16 +16,20 @@ export default function Calendar() {
   //set day in than month
   const daysInMonth: number = currentDate.daysInMonth();
 
-  const getTodosCol = (uid: string) => collection(db, "UserData", uid, "todos");
+  // const getTodosCol = (uid: string) => collection(db, "UserData", uid, "todos");
+
+  const year = dayjs(currentDate).format("YYYY");
+    const month = dayjs(currentDate).format("MM");
 
   //set than the firestday is the date one ,what day is it on
   const firestDayOfMonth: number = currentDate.startOf("month").day();
 
   //set empty value from the beginning of the month
   const emptyfirstDays: Array<null> = Array(firestDayOfMonth).fill(null);
-  //set empty value form the end of the month
+  // ล็อกปฏิทินให้มี 6 แถวเสมอ เพื่อไม่ให้เดือนที่มี 5/6 แถวดันตำแหน่งปีและแถบเดือนต่างกัน
+  const totalCalendarCells = 42;
   const emtyLastDays: Array<null> = Array(
-    6 - currentDate.endOf("month").day(),
+    Math.max(0, totalCalendarCells - emptyfirstDays.length - daysInMonth),
   ).fill(null);
 
   //set the day of the month as an array
@@ -54,7 +56,6 @@ export default function Calendar() {
     currentDate.add(2, "month"),
   ];
 
-  
   //set next month
   function nextMonth() {
     if (isTransitioning) return; // ป้องกันการคลิกรัวๆ ระหว่างเลื่อน
@@ -94,47 +95,43 @@ export default function Calendar() {
       return;
     }
     async function getTodolist() {
-    try {
-      if (!user?.uid) return;
+      try {
+        if (!user?.uid) return;
 
-      const startOfMonth = currentDate.startOf("month").format("YYYY-MM-DD");
-      const endOfMonth = currentDate.endOf("month").format("YYYY-MM-DD");
 
-      const todosQuery = query(
-        getTodosCol(user.uid),
-        where("datekey", ">=", startOfMonth),
-        where("datekey", "<=", endOfMonth),
-      );
-      const querySnapshot = await getDocs(todosQuery);
-      const newdata = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Todolist[];
+        const data = await services.getTodos(user.uid, year, month);
 
-      const groupedByDay: Record<string, Todolist[]> = {};
-      newdata.forEach((todo) => {
-        if (!groupedByDay[todo.datekey]) groupedByDay[todo.datekey] = [];
-        groupedByDay[todo.datekey].push(todo);
-      });
+        const groupedByDay: Record<string, Todolist[]> = {};
+        if (!data) return;
+        data.forEach((todo) => {
+          if (!groupedByDay[todo.datekey]) groupedByDay[todo.datekey] = [];
+          groupedByDay[todo.datekey].push(todo);
+        });
 
-      setTodosCache((prev) => ({
-        ...prev,
-        [monthKey]: groupedByDay,
-      }));
-    // console.log("Fetched todos:", groupedByDay);
-    } catch (error) {
-      console.error("Error fetching todos:", error);
+        setTodosCache((prev) => ({
+          ...prev,
+          [monthKey]: groupedByDay,
+        }));
+        // console.log("Fetched todos:", groupedByDay);
+      } catch (error) {
+        console.error("Error fetching todos:", error);
+      }
     }
-  }
     getTodolist();
 
     // setGetTodolist();
   }, [user?.uid, monthKey]);
 
-
   const calendar = useMemo(() => {
+    // เหตุผล: ใช้เฉพาะตอนแสดงผลใน Calendar เพื่อดัน todo ที่มีสีจริงขึ้นบนสุด โดยไม่เปลี่ยนลำดับข้อมูลต้นฉบับใน cache
+    const hasTodoColor = (color?: string) => {
+      const normalizedColor = color?.trim().toLowerCase();
+      return Boolean(normalizedColor && normalizedColor !== "#ffffff");
+    };
+
     return (
       <div className="calendar">
+
         {["sun", "mon", "tue", "wed", "thu", "fri", "sat"].map((day) => (
           <div key={day}>{day}</div>
         ))}
@@ -146,6 +143,9 @@ export default function Calendar() {
           const dayKey = currentDate.date(day).format("YYYY-MM-DD");
           // ดึง List ของเดือนปัจจุบันออกมา ถ้ายังไม่มีให้เป็น Array ว่าง
           const todosForDay = todosCache[monthKey]?.[dayKey] || [];
+          const sortedTodosForDay = [...todosForDay].sort(
+            (a, b) => Number(hasTodoColor(b.color)) - Number(hasTodoColor(a.color)),
+          );
           return (
             <button
               key={day}
@@ -163,7 +163,7 @@ export default function Calendar() {
                 {day}
               </div>
               <div className="todolist-content-container">
-                {todosForDay.map((todo) => (
+                {sortedTodosForDay.map((todo) => (
                   <div
                     key={todo?.id}
                     style={{ background: todo?.color ?? "#fff8f8" }}
@@ -185,6 +185,7 @@ export default function Calendar() {
   return (
     <>
       <section className="Caleder-page">
+         <div className="year">{year}</div>
         <div className="month-slider-view">
           {/* ใส่คลาส transition-active เมื่ออยู่ในช่วงกำลังเลื่อนเท่านั้น */}
           <div

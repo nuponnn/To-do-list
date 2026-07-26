@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { AuthContext } from "../Context/AuthPreventContext";
-import { nanoid } from "nanoid";
-import { useParams } from "react-router-dom";
+
+import { useParams, useNavigate } from "react-router-dom";
 import { services } from "../components/services";
 import Alertconfirm from "../components/Alertconfirm";
 import { useTodo } from "../Context/TodoProvider";
 import dayjs from "dayjs";
 import styles from "../assets/css/Todolist.module.css";
+import { type Todolist } from "../components/services";
 
 const css = (...classNames: Array<string | false | null | undefined>) =>
   classNames
@@ -14,16 +15,16 @@ const css = (...classNames: Array<string | false | null | undefined>) =>
     .map((className) => styles[className as string] || className)
     .join(" ");
 
-interface Todolist {
-  id: string;
-  name: string;
-  value: string;
-  complete: boolean;
-  createdAt: Date;
-  datekey: string;
-  color?: string;
-  icon?: string;
-}
+// interface Todolist {
+//   id: string;
+//   name: string;
+//   value?: string;
+//   complete: boolean;
+//   createdAt: Date;
+//   datekey: string;
+//   color?: string;
+//   icon?: string;
+// }
 // type Action =
 //   | { type: "SET_TODOS"; payload: Todolist[] }
 //   | { type: "ADD_TODO"; payload: Todolist }
@@ -77,8 +78,7 @@ export default function Todolist() {
   const { user, loading } = AuthContext();
   const { day } = useParams();
   const { setTodosCache, todosCache } = useTodo();
-
-
+  const navigate = useNavigate();
 
   const [todolist, settodolist] = useState<Partial<Todolist>>({});
   // const [mydataTodolist, dispatch] = useReducer(todoReducer, []);
@@ -95,12 +95,15 @@ export default function Todolist() {
   const [selectedColor, setSelectedColor] = useState<string>("#ffffff");
   const [Alert, setAlert] = useState<{
     isOpen: boolean;
-      action?: "Add" | "Edit" | "Delete";
+    action?: "Add" | "Edit" | "Delete";
     Item?: Partial<Todolist>;
   }>({ isOpen: false });
 
-  const targetMonth = dayjs(day).format("YYYY-MM");
+  const targetMonth = dayjs(activeDay).format("YYYY-MM");
 
+  const year = dayjs(activeDay).format("YYYY");
+  const month = dayjs(activeDay).format("MM");
+  const monthKey = dayjs(activeDay).format("YYYY-MM");
   //-----------------function updateDayCache ------------------
 
   function updateDayCache(
@@ -122,7 +125,31 @@ export default function Todolist() {
     () => todosCache[targetMonth]?.[activeDay] || [],
     [todosCache, targetMonth, activeDay],
   );
+
+  // เหตุผล: แยกรายการที่มีสีจริงให้ขึ้นบนสุด เพื่อให้ task สำคัญเห็นก่อน แต่ยังคงเรียง task ที่ยังไม่เสร็จก่อน task ที่เสร็จเหมือนเดิม
+  const sortedTodolist = useMemo(() => {
+    const hasTodoColor = (color?: string) => {
+      const normalizedColor = color?.trim().toLowerCase();
+      return Boolean(normalizedColor && normalizedColor !== "#ffffff");
+    };
+
+    return [...mydataTodolist].sort((a, b) => {
+      const colorPriority =
+        Number(hasTodoColor(b.color)) - Number(hasTodoColor(a.color));
+
+      if (colorPriority !== 0) return colorPriority;
+
+      return Number(a.complete) - Number(b.complete);
+    });
+  }, [mydataTodolist]);
   function Isconfirm() {
+    if (
+      (Alert.action === "Edit" || Alert.action === "Delete") &&
+      !Alert.Item?.id
+    ) {
+      console.error("Missing id for", Alert.action);
+      return;
+    }
     switch (Alert.action) {
       case "Add":
         return addData();
@@ -139,24 +166,35 @@ export default function Todolist() {
   async function addData() {
     try {
       if (!user?.uid) return;
-      if (!todolist.name || !todolist.value) {
-        alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+      if (!todolist.name?.trim()) {
+        alert("กรุณากรอกข้อมูล");
         return;
       }
-      const docId = nanoid(10);
-      const newTodolist: Todolist = {
-        id: docId,
+
+      const todoDataToSave: Omit<Todolist, "id"> = {
         name: todolist.name,
-        value: todolist.value,
+        value: todolist.value || "",
         complete: false,
         createdAt: new Date(),
         datekey: activeDay,
         color: selectedColor,
       };
 
-      await services.addTodo(user.uid, newTodolist);
+      const savedId = await services.addTodo(
+        user.uid,
+        year,
+        month,
+        todoDataToSave,
+      );
       // dispatch({ type: "ADD_TODO", payload: newTodolist });
-      updateDayCache(targetMonth, activeDay, (todo) => [...todo, newTodolist]);
+      const newTodoIntoCache: Todolist = {
+        id: savedId,
+        ...todoDataToSave,
+      };
+      updateDayCache(targetMonth, activeDay, (todo) => [
+        ...todo,
+        newTodoIntoCache,
+      ]);
       alert("Add To Do Success");
       settodolist({});
       setSelectedColor("#ffffff");
@@ -169,7 +207,11 @@ export default function Todolist() {
 
   function handleStartEdit(todo: Todolist) {
     setEditingId(todo.id);
-    setEditOldDataInput({ name: todo.name, value: todo.value });
+    setEditOldDataInput({
+      name: todo.name,
+      value: todo.value,
+      color: todo.color,
+    });
     setSelectedColor(todo.color || "#ffffff");
     settodolist({});
   }
@@ -183,9 +225,8 @@ export default function Todolist() {
         value: todolist.value ?? editOldDataInput.value,
         color: selectedColor,
       };
-      const targetMonth = dayjs(activeDay).format("YYYY-MM");
-      await services.updateTodo(user.uid, id, updates);
 
+      await services.updateTodo(user.uid, year, month, id, updates);
       updateDayCache(targetMonth, activeDay, (todos) =>
         todos.map((t) => (t.id === id ? { ...t, ...updates, id } : t)),
       );
@@ -202,7 +243,7 @@ export default function Todolist() {
   async function toggleComplete(id: string, currentStats: boolean) {
     try {
       if (!user?.uid) return;
-      await services.toggleComplete(user.uid, id, !currentStats);
+      await services.toggleComplete(user.uid, year, month, id, !currentStats);
 
       updateDayCache(targetMonth, activeDay, (todos) =>
         todos.map((t) =>
@@ -215,25 +256,25 @@ export default function Todolist() {
   }
   //-----------------checkbox Data ------------------
 
-  async function setTodoIcon(id: string, icon: string) {
-    try {
-      if (!user?.uid) return;
-      await services.updateTodo(user.uid, id, { icon });
+  // async function setTodoIcon(id: string, icon: string) {
+  //   try {
+  //     if (!user?.uid) return;
+  //     await services.updateTodo(user.uid, id, { icon });
 
-      updateDayCache(targetMonth, activeDay, (todos) =>
-        todos.map((t) => (t.id === id ? { ...t, icon } : t)),
-      );
-    } catch (error) {
-      console.log(error);
-    }
-  }
+  //     updateDayCache(targetMonth, activeDay, (todos) =>
+  //       todos.map((t) => (t.id === id ? { ...t, icon } : t)),
+  //     );
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }
 
   //-----------------Delete Data ------------------
 
   async function DeleteData(id: string) {
     try {
       if (!user?.uid) return;
-      await services.deleteTodo(user.uid, id);
+      await services.deleteTodo(user.uid, year, month, id);
 
       updateDayCache(targetMonth, activeDay, (todos) =>
         todos.filter((t) => t.id !== id),
@@ -248,29 +289,49 @@ export default function Todolist() {
     const { name, value } = e.target;
     settodolist((prav) => ({ ...prav, [name]: value }));
   }
+  //-----------------Next Day ------------------
+  function handleNextDay() {
+    const nextDate = dayjs(activeDay).add(1, "day").format("YYYY-MM-DD");
+    navigate(`/to-do-list/${nextDate}`);
+  }
+  //-----------------Prev Day ------------------
+  function handlePrevDay() {
+    const prevDate = dayjs(activeDay).subtract(1, "day").format("YYYY-MM-DD");
+    navigate(`/to-do-list/${prevDate}`);
+  }
   //-----------------useEffect ------------------
 
   useEffect(() => {
     if (!user?.uid) return;
-    if (todosCache[targetMonth]) return;
+
     //-----------------Get Data ------------------
     async function getData() {
       if (!user?.uid) return;
-      const data = await services.getTodos(user.uid, dayjs(activeDay));
-      const groupedByDay: Record<string, Todolist[]> = {};
-      if (!data) return;
-      data.forEach((todo) => {
-        if (!groupedByDay[todo.datekey]) groupedByDay[todo.datekey] = [];
-        groupedByDay[todo.datekey].push(todo);
-      });
+      if (todosCache[monthKey]) {
+        return;
+      }
+      try {
+        const data = await services.getTodos(user.uid, year, month);
+        const groupedByDay: Record<string, Todolist[]> = {};
+        if (!data) return;
 
-      setTodosCache((prev) => ({
-        ...prev,
-        [targetMonth]: groupedByDay,
-      }));
+        data.forEach((todo) => {
+          if (!groupedByDay[todo.datekey]) groupedByDay[todo.datekey] = [];
+          groupedByDay[todo.datekey].push(todo);
+        });
+
+        setTodosCache((prev) => ({
+          ...prev,
+          [targetMonth]: groupedByDay,
+        }));
+      } catch (error) {
+        console.error("Failed to load todos:", error);
+        alert("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่");
+      }
     }
     getData();
-  }, [user?.uid, targetMonth]);
+  }, [user?.uid, targetMonth, year, month]);
+
   if (loading) {
     return (
       <div style={{ textAlign: "center", padding: "50px" }}>Loading App...</div>
@@ -284,7 +345,6 @@ export default function Todolist() {
           DataOpenAlert={Alert}
           SetOpenAlert={setAlert}
           Isconfirm={Isconfirm}
-          
           OldData={editOldDataInput}
         />
       )}
@@ -295,7 +355,15 @@ export default function Todolist() {
             <h1 className={css("title")}>To Do List</h1>
             <p className={css("meta")}>{user?.email}</p>
           </div>
-          <span className={css("dateBadge")}>{activeDay}</span>
+          <div className={css("daycontrol")}>
+            <button className="prev-day" onClick={handlePrevDay}>
+              &lt;
+            </button>
+            <span className={css("dateBadge")}>{activeDay}</span>
+            <button className="next-day" onClick={handleNextDay}>
+              &gt;
+            </button>
+          </div>
         </header>
 
         {Statusmode === "Add" ? (
@@ -335,8 +403,12 @@ export default function Todolist() {
                 onClick={() =>
                   setAlert({
                     isOpen: true,
-                    Item: { name: todolist.name, value: todolist.value },
-                    action:"Add"
+                    Item: {
+                      name: todolist.name,
+                      value: todolist.value,
+                      color: selectedColor,
+                    },
+                    action: "Add",
                   })
                 }
               >
@@ -395,123 +467,119 @@ export default function Todolist() {
 
         <section className={css("listShell")}>
           <ul className={css("list")}>
-            {[...mydataTodolist]
-              .sort((a, b) => Number(a.complete) - Number(b.complete))
-              .map((todo) => (
-                <li
-                  key={todo.id}
-                  className={css("item", todo.complete && "done")}
-                  style={{ borderLeft: `4px solid ${todo.color || "#e5e7eb"}` }}
-                >
-                  <input
-                    type="checkbox"
-                    className={css("checkbox")}
-                    checked={todo.complete}
-                    onChange={() => toggleComplete(todo.id, todo.complete)}
-                  />
+            {sortedTodolist.map((todo) => (
+              <li
+                key={todo.id}
+                className={css("item", todo.complete && "done")}
+                style={{ borderLeft: `4px solid ${todo.color || "#e5e7eb"}` }}
+              >
+                <input
+                  type="checkbox"
+                  className={css("checkbox")}
+                  checked={todo.complete}
+                  onChange={() => toggleComplete(todo.id, todo.complete)}
+                />
 
-                  {Statusmode === "Edit" &&
-                  !todo.complete &&
-                  editingId === todo.id ? (
-                    <div className={css("editBox")}>
-                      <div className={css("editFields")}>
-                        <input
-                          className={css("input")}
-                          type="text"
-                          name="name"
-                          defaultValue={editOldDataInput.name}
-                          placeholder="Edit title"
-                          onChange={handleChange}
-                        />
-                        <input
-                          className={css("input")}
-                          type="text"
-                          name="value"
-                          defaultValue={editOldDataInput.value}
-                          placeholder="Edit description"
-                          onChange={handleChange}
-                        />
-                      </div>
-                      <ColorPicker
-                        selectedColor={selectedColor}
-                        onColorChange={setSelectedColor}
+                {Statusmode === "Edit" &&
+                !todo.complete &&
+                editingId === todo.id ? (
+                  <div className={css("editBox")}>
+                    <div className={css("editFields")}>
+                      <input
+                        className={css("input")}
+                        type="text"
+                        name="name"
+                        defaultValue={editOldDataInput.name}
+                        placeholder="Edit title"
+                        onChange={handleChange}
                       />
-                      <div className={css("itemActions")}>
-                        <button
-                          className={css("button", "success")}
-                          onClick={() =>
-                            setAlert({
-                              isOpen: true,
-                              Item: {
-                                id: todo.id,
-                                name: todolist.name,
-                                value: todolist.value,
-                                
-                              },
-                              action: "Edit",
-                            })
-                          }
-                        >
-                          Save
-                        </button>
-                        <button
-                          className={css("button", "secondary")}
-                          onClick={() => {
-                            SetStatusmode(null);
-                            settodolist({});
-                            setSelectedColor("#ffffff");
-                            setEditingId(null);
-                          }}
-                        >
-                          Cancel
-                        </button>
-                      </div>
+                      <input
+                        className={css("input")}
+                        type="text"
+                        name="value"
+                        defaultValue={editOldDataInput.value}
+                        placeholder="Edit description"
+                        onChange={handleChange}
+                      />
                     </div>
-                  ) : (
-                    <div className={css("content")}>
-                      <h3 className={css("itemTitle")}>{todo.name}</h3>
-                      <p className={css("itemText")}>{todo.value}</p>
-                    </div>
-                  )}
-
-                  {Statusmode === "Edit" &&
-                    !todo.complete &&
-                    editingId !== todo.id && (
-                      <div className={css("itemActions")}>
-                        <button
-                          className={css("button", "secondary")}
-                          onClick={() => handleStartEdit(todo)}
-                        >
-                          Edit
-                        </button>
-                      </div>
-                    )}
-
-                  {Statusmode === "Delete" && (
+                    <ColorPicker
+                      selectedColor={selectedColor}
+                      onColorChange={setSelectedColor}
+                    />
                     <div className={css("itemActions")}>
                       <button
-                        className={css("button", "danger")}
-                        onClick={() =>{
-
+                        className={css("button", "success")}
+                        onClick={() =>
                           setAlert({
                             isOpen: true,
                             Item: {
                               id: todo.id,
-                              name: todo.name,
-                              value: todo.value,
+                              name: todolist.name,
+                              value: todolist.value,
+                              color: selectedColor,
                             },
-                            action:"Delete"
-                          });
-                          console.log(todo)
-                        }
+                            action: "Edit",
+                          })
                         }
                       >
-                        Delete
+                        Save
+                      </button>
+                      <button
+                        className={css("button", "secondary")}
+                        onClick={() => {
+                          SetStatusmode(null);
+                          settodolist({});
+                          setSelectedColor("#ffffff");
+                          setEditingId(null);
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={css("content")}>
+                    <h3 className={css("itemTitle")}>{todo.name}</h3>
+                    <p className={css("itemText")}>{todo.value}</p>
+                  </div>
+                )}
+
+                {Statusmode === "Edit" &&
+                  !todo.complete &&
+                  editingId !== todo.id && (
+                    <div className={css("itemActions")}>
+                      <button
+                        className={css("button", "secondary")}
+                        onClick={() => handleStartEdit(todo)}
+                      >
+                        Edit
                       </button>
                     </div>
                   )}
-                </li>
-              ))}
+
+                {Statusmode === "Delete" && (
+                  <div className={css("itemActions")}>
+                    <button
+                      className={css("button", "danger")}
+                      onClick={() => {
+                        setAlert({
+                          isOpen: true,
+                          Item: {
+                            id: todo.id,
+                            name: todo.name,
+                            value: todo.value,
+                          },
+                          action: "Delete",
+                        });
+                        console.log(todo);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </li>
+            ))}
           </ul>
           {mydataTodolist.length === 0 && (
             <p className={css("empty")}>No tasks available for today</p>

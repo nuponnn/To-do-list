@@ -15,6 +15,7 @@
   --day-height-xs: 76px;
   --day-height-sm: 84px;
   --day-height-md: 112px;
+  --weekday-height: 24px;
 
   --day-padding-sm: 4px;
   --day-padding-md: 6px;
@@ -42,7 +43,8 @@
    BASE STYLES
    ============================================================ */
 .Caleder-page {
-  margin: 1rem;
+  /* เผื่อพื้นที่ให้ปีไม่โดน navbar แบบ fixed ทับ ก่อนถึงแถบเดือน */
+  margin: 76px auto 1rem;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -53,6 +55,8 @@
   display: grid;
   background-color: #ffffff;
   border-radius: var(--cal-radius-lg);
+  /* แยกตำแหน่ง calendar ออกจากแถบเดือน เพื่อให้เลื่อนลงคงที่ทุกเดือน */
+  margin-top: 16px;
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.05),
     0 2px 4px -2px rgba(0, 0, 0, 0.05);
@@ -67,6 +71,28 @@
   text-align: center;
 }
 
+.year {
+  text-align: center;
+  /* ใช้โทนเดียวกับ active month เพื่อให้หัวปีไม่หลุดธีมจากแถบเดือน */
+  color: #0f172a;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.08),
+    0 1px 2px -1px rgba(0, 0, 0, 0.08);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 40px;
+  height: 40px;
+  width: 120px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
 .day-container {
   display: flex;
   flex-direction: column;
@@ -240,7 +266,8 @@
     --day-height: var(--day-height-xs);
     gap: var(--cal-gap);
     padding: var(--cal-padding);
-height: var(--day-height);
+    /* ล็อกหัววัน + 6 แถววันไว้ตายตัว เพื่อให้ช่องวันไม่ถูกบีบเมื่อเดือนมี 6 แถว */
+    grid-template-rows: var(--weekday-height) repeat(6, var(--day-height));
     grid-template-columns: repeat(
       7,
       min(54px, calc((100% - var(--cal-gap) * 6 - var(--cal-padding) * 2) / 7))
@@ -273,7 +300,8 @@ height: var(--day-height);
 /* SM — 321px–480px */
 @media (321px <= width <= 480px) {
   .Caleder-page {
-    margin: 1rem;
+    /* เผื่อพื้นที่ให้ปีไม่โดน navbar แบบ fixed ทับในจอมือถือ */
+    margin: 76px auto 1rem;
   }
   .month-slider-view {
     width: min(100%, 340px);
@@ -285,6 +313,8 @@ height: var(--day-height);
     --cal-padding: var(--cal-padding-sm);
     gap: var(--cal-gap);
     padding: var(--cal-padding);
+    /* ล็อกหัววัน + 6 แถววันไว้ตายตัว เพื่อให้ช่องวันไม่ถูกบีบเมื่อเดือนมี 6 แถว */
+    grid-template-rows: var(--weekday-height) repeat(6, clamp(72px, 10vw + 40px, 88px));
     grid-template-columns: repeat(
       7,
       min(54px, calc((100% - var(--cal-gap) * 6 - var(--cal-padding) * 2) / 7))
@@ -325,6 +355,8 @@ height: var(--day-height);
     gap: var(--cal-gap);
     padding: var(--cal-padding);
     grid-template-columns: repeat(7, minmax(60px, 1fr));
+    /* ล็อกหัววัน + 6 แถววันไว้ตายตัว เพื่อให้ช่องวันไม่ถูกบีบเมื่อเดือนมี 6 แถว */
+    grid-template-rows: var(--weekday-height) repeat(6, var(--day-height-sm));
     min-height: 620px;
     border-radius: var(--cal-radius-md);
   }
@@ -358,6 +390,8 @@ height: var(--day-height);
     gap: var(--cal-gap);
     padding: var(--cal-padding);
     grid-template-columns: repeat(7, minmax(70px, 1fr));
+    /* ล็อกหัววัน + 6 แถววันไว้ตายตัว เพื่อให้ช่องวันไม่ถูกบีบเมื่อเดือนมี 6 แถว */
+    grid-template-rows: var(--weekday-height) repeat(6, var(--day-height-md));
     min-height: 720px;
   }
 
@@ -380,6 +414,8 @@ height: var(--day-height);
     gap: var(--cal-gap);
     padding: var(--cal-padding);
     grid-template-columns: repeat(7, minmax(90px, 1fr));
+    /* ล็อกหัววัน + 6 แถววันไว้ตายตัว เพื่อให้ช่องวันไม่ถูกบีบเมื่อเดือนมี 6 แถว */
+    grid-template-rows: var(--weekday-height) repeat(6, var(--day-height-md));
     min-height: 760px;
   }
 
@@ -402,6 +438,8 @@ height: var(--day-height);
     gap: var(--cal-gap);
     padding: var(--cal-padding);
     grid-template-columns: repeat(7, minmax(90px, 1fr));
+    /* ล็อกหัววัน + 6 แถววันไว้ตายตัว เพื่อให้ช่องวันไม่ถูกบีบเมื่อเดือนมี 6 แถว */
+    grid-template-rows: var(--weekday-height) repeat(6, var(--day-height-md));
     min-height: 760px;
   }
 
