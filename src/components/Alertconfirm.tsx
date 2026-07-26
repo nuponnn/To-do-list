@@ -31,7 +31,7 @@ export default function Alertconfirm({
   const hasNameChanged =
     Item?.name !== undefined && Item?.name !== OldData?.name;
 
-  const hasValueChanged = Item?.name !== undefined && Item?.value !== OldData?.value;
+  const hasValueChanged = Item?.value !== undefined && Item?.value !== OldData?.value;
 
   const hasColorChanged =
     Item?.color !== undefined && Item?.color !== OldData?.color;
@@ -39,8 +39,6 @@ export default function Alertconfirm({
   const isConfirmDisabled =
     (DataOpenAlert.action === "Edit" && !isEdited) ||
     (DataOpenAlert.action === "Add" && !Item?.name);
-  console.log(OldData, "oldData");
-  console.log(Item, "newData");
 
   return (
     <div className="alert-confirm">

@@ -330,7 +330,7 @@ export default function Todolist() {
       }
     }
     getData();
-  }, [user?.uid, targetMonth, year, month]);
+  }, [user?.uid, targetMonth, year, month, monthKey, setTodosCache, todosCache]);
 
   if (loading) {
     return (
