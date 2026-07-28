@@ -45,9 +45,9 @@ function ColorPicker({ selectedColor, onColorChange }: ColorPickerProps) {
   ];
 
   return (
-    <div className={css("colorArea")}>
-      <span className={css("colorLabel")}>สีแท็ก</span>
-      <div className={css("colorRow")}>
+    <div className="colorArea">
+      <span className="colorLabel">สีแท็ก</span>
+      <div className="colorRow">
         {defaultColors.map((c) => (
           <button
             key={c.code}
