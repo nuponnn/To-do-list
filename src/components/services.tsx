@@ -5,7 +5,10 @@ import {
   getDocs,
   updateDoc,
   deleteDoc,
- 
+ query,
+ orderBy,
+ addDoc,
+ serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -27,7 +30,46 @@ export interface Todolist {
   color?: string; // เพิ่มฟิลด์สี (ไม่บังคับ)
   icon?: string;
 }
+interface QuickTodo {
+  id: string; // ID ของ Quick Todo
+  name: string; // ชื่อ Todo
+  value?: string; // ค่าของ Todo (ไม่บังคับ)
+  color: string; // สี
+}
 export const services = {
+  // ---------------- get Quick Todos in User ----------------
+  getQuickTodos: async (uid: string) => {
+    const q = query(
+      collection(db, "UserData", uid, "quick_todos"),
+      orderBy("createdAt", "asc")
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as QuickTodo[];
+  },
+  // ----------------save Quick Todo in Database----------------
+  addQuickTodo: async (
+    uid: string,
+    todo: Omit<QuickTodo, "id">
+  ) => {
+    const docRef = await addDoc(
+      collection(db, "UserData", uid, "quick_todos"),
+      {
+        ...todo,
+        createdAt: serverTimestamp(),
+      }
+    );
+    return docRef.id;
+  },
+  // ----------------delete Quick Todo in Database----------------
+  deleteQuickTodo: async (uid: string, id: string) => {
+    const docRef = doc(db, "UserData", uid, "quick_todos", id);
+    await deleteDoc(docRef);
+  },
+
+
   //-----------------getTodos-----------------
   getTodos: async (uid: string, year: string, month: string) => {
     if (!uid) return;

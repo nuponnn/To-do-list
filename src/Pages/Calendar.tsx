@@ -5,6 +5,7 @@ import "../assets/css/Calendar.css";
 import { AuthContext } from "../Context/AuthPreventContext";
 import { services, type Todolist } from "../components/services";
 import { useTodo } from "../Context/TodoProvider";
+import Alertconfirm from "../components/Alertconfirm";
 
 interface PendingStamp {
   dateKey: string; // เช่น "2026-07-26"
@@ -41,9 +42,7 @@ function ColorPicker({ selectedColor, onColorChange }: ColorPickerProps) {
             type="button"
             aria-label={c.name}
             onClick={() => onColorChange(c.code)}
-            className={`
-              "colorDot" ${selectedColor === c.code && "colorDotActive"}
-              `}
+            className={`colorDot ${selectedColor === c.code ? "colorDotActive" : ""}`}
             style={{ backgroundColor: c.code }}
           />
         ))}
@@ -60,10 +59,28 @@ function ColorPicker({ selectedColor, onColorChange }: ColorPickerProps) {
   );
 }
 
+const daysWithColors = [
+  { name: "sun", color: "day-sun" },
+  { name: "mon", color: "day-mon" },
+  { name: "tue", color: "day-tue" },
+  { name: "wed", color: "day-wed" },
+  { name: "thu", color: "day-thu" },
+  { name: "fri", color: "day-fri" },
+  { name: "sat", color: "day-sat" },
+];
+
 export default function Calendar() {
   const { user } = AuthContext();
   const navigate = useNavigate();
   const { todosCache, setTodosCache } = useTodo();
+  //Alert
+  const [Alert, setAlert] = useState<{
+    isOpen: boolean;
+    action?: "Add" | "Edit" | "Delete";
+    Item?: Partial<Todolist>;
+    source?: "stamp" | "quick";
+  }>({ isOpen: false });
+
   //statefuntion
   const [currentDate, setCurrentDate] = useState(dayjs());
 
@@ -105,9 +122,9 @@ export default function Calendar() {
   //---------------------------todo list---------------------------
   const [newQuickText, setNewQuickText] = useState<Partial<QuickTodo>>({
     name: "",
-    color: "#4da6ff",
+    color: "#ffffff",
   });
-  const [selectedQuickColor, setSelectedQuickColor] = useState("#4da6ff");
+  const [selectedQuickColor, setSelectedQuickColor] = useState("#ffffff");
   // เก็บ QuickTodo
   const [quickTodos, setQuickTodos] = useState<QuickTodo[]>([]);
   // สถานะของ QuickTodo ที่กำลัง active อยู่
@@ -150,15 +167,10 @@ export default function Calendar() {
               item.dateKey === dateStr && item.name === targetQuick.name,
           );
           if (existsIndex !== -1) {
-         setRedoHistory((prev) => [...prev, {
-              dateKey: dateStr,
-              name: targetQuick.name,
-              value: targetQuick.value,
-              color: targetQuick.color,
-            }]);
+            setRedoHistory((r) => [...r, prev[existsIndex]]);
             return prev.filter((_, index) => index !== existsIndex);
           }
-          
+
           return [
             ...prev,
             {
@@ -176,8 +188,6 @@ export default function Calendar() {
     },
     [activeQuickId, currentDate, navigate, quickTodos],
   );
-
-
 
   const handleConfirmSave = async () => {
     if (pendingStamps.length === 0 || !user?.uid) return;
@@ -230,27 +240,76 @@ export default function Calendar() {
     }
   };
 
-  const handleAddQuickTodo = () => {
-    if (!newQuickText.name?.trim()) return;
-    const newItem: QuickTodo = {
-      id: Date.now().toString(),
+  const handleAddQuickTodo = async () => {
+    if (!newQuickText.name?.trim() || !user?.uid) return;
+    const newItemData: Omit<QuickTodo, "id"> = {
       name: newQuickText.name.trim(),
       value: newQuickText.value?.trim() || "",
       color: selectedQuickColor,
     };
-    setQuickTodos((prev) => [...prev, newItem]);
-    setNewQuickText({ name: "", value: "", color: "#4da6ff" });
+    try {
+      // ยิงบันทึกลง Firestore
+      const savedId = await services.addQuickTodo(user.uid, newItemData);
+
+      // อัปเดต State หน้าจอทันที
+      setQuickTodos((prev) => [...prev, { id: savedId, ...newItemData }]);
+      setNewQuickText({ name: "", value: "", color: "#ffffff" });
+    } catch (error) {
+      console.error("Error adding quick todo:", error);
+    }
   };
 
-  const handleDeleteQuickTodo = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation(); // ป้องกันการคลิกโดนเพื่อเลือก Tag
-    setQuickTodos((prev) => prev.filter((item) => item.id !== id));
-    if (activeQuickId === id) setActiveQuickId(null);
+  const handleDeleteQuickTodo = async (id: string) => {
+    if (!user?.uid) return;
+
+    try {
+      // ลบออกจาก Firestore
+      await services.deleteQuickTodo(user.uid, id);
+
+      // อัปเดต State ลบออกจากหน้าจอ
+      setQuickTodos((prev) => prev.filter((item) => item.id !== id));
+      if (activeQuickId === id) setActiveQuickId(null);
+    } catch (error) {
+      console.error("Error deleting quick todo:", error);
+    }
   };
 
-  // console.log(activeQuickId, "activeQuickId");
-  // console.log(newQuickText, "newQuickText");
-  console.log("hisrery", redoHistory);
+  function Isconfirm() {
+    if (Alert.action === "Delete" && !Alert.Item?.id) {
+      console.error("Missing id for", Alert.action);
+      return;
+    }
+    switch (Alert.action) {
+      case "Add":
+        return Alert.source === "stamp"
+          ? handleConfirmSave()
+          : handleAddQuickTodo();
+
+      case "Delete":
+        return handleDeleteQuickTodo(Alert.Item?.id || "");
+      default:
+        return null;
+    }
+  }
+  const ceartstarte = () => {
+    // 2. Reset Quick Todo Creation Inputs
+    setNewQuickText({
+      name: "",
+      value: "",
+      color: "#ffffff",
+    });
+    setSelectedQuickColor("#ffffff");
+
+    // 3. Reset Quick Todo Selection & Pending Stamps
+    setActiveQuickId(null);
+    setPendingStamps([]);
+    setRedoHistory([]);
+
+    // 4. Reset UI Modals & Panels
+    setAlert({ isOpen: false });
+
+    // 5. Reset Quick Todo List Data (ถ้าต้องการล้างรายการ Quick Todo ทั้งหมดออกจากหน้าจอ)
+  };
   //---------------------------end todo list---------------------------
 
   const displayedMonths = [
@@ -287,6 +346,24 @@ export default function Calendar() {
       setIsTransitioning(false);
     }, transitionDuration);
   }
+
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    async function fetchQuickTodos() {
+      try {
+        if (!user?.uid) return;
+        const data = await services.getQuickTodos(user.uid);
+        if (data) {
+          setQuickTodos(data);
+        }
+      } catch (error) {
+        console.error("Error fetching quick todos:", error);
+      }
+    }
+
+    fetchQuickTodos();
+  }, [user?.uid]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -329,9 +406,11 @@ export default function Calendar() {
 
     return (
       <div className="calendar">
-        {["sun", "mon", "tue", "wed", "thu", "fri", "sat"].map((day) => (
-          <div key={day}>{day}</div>
-        ))}
+       {daysWithColors.map(({ name, color }) => (
+  <div key={name} className={color}>
+    {name}
+  </div>
+))}
         {emptyfirstDays.map((_, index) => (
           <div key={index} />
         ))}
@@ -385,7 +464,7 @@ export default function Calendar() {
                   }}
                   className="todolist-content"
                 >
-                  ⏳ {pItem.name}
+                  {pItem.name}
                 </div>
               ))}
             </button>
@@ -398,12 +477,14 @@ export default function Calendar() {
     );
   }, [
     Selectedday,
+    activeQuickId,
     currentDate,
     days,
     emptyfirstDays,
     emtyLastDays,
     isCurrentMonth,
     monthKey,
+    pendingStamps,
     todayDate,
     todosCache,
   ]);
@@ -411,6 +492,16 @@ export default function Calendar() {
   return (
     <>
       <section className="Caleder-page">
+        {Alert.isOpen && (
+          <Alertconfirm
+            DataOpenAlert={Alert}
+            SetOpenAlert={setAlert}
+            Isconfirm={Isconfirm}
+            pendingStampslength={pendingStamps.length}
+            Page="Calendar"
+          />
+        )}
+
         <div className="year">{year}</div>
         <div className="month-slider-view">
           {/* ใส่คลาส transition-active เมื่ออยู่ในช่วงกำลังเลื่อนเท่านั้น */}
@@ -439,84 +530,121 @@ export default function Calendar() {
         </div>
         {calendar}
 
-        {todoopen ? (
-          <div className="quick-todo-body">
-            {/* ช่องกรอกข้อมูล + ปุ่มเพิ่ม */}
-            <div className="quick-todo-inputs">
-              <div>
-                <h2>Create New Task</h2>
-                <input
-                  type="text"
-                  placeholder="e.g., Homework"
-                  value={newQuickText.name}
-                  onChange={(e) =>
-                    setNewQuickText({ ...newQuickText, name: e.target.value })
-                  }
-                  onKeyDown={(e) => e.key === "Enter" && handleAddQuickTodo()}
-                  className="quick-input"
-                />
-                <span>Description</span>
-                <input
-                  type="text"
-                  placeholder="e.g., Meeting"
-                  value={newQuickText.value}
-                  onChange={(e) =>
-                    setNewQuickText({ ...newQuickText, value: e.target.value })
-                  }
-                  onKeyDown={(e) => e.key === "Enter" && handleAddQuickTodo()}
-                  className="quick-input"
-                />
-              </div>
-              <div className="color-picker-container">
-                <ColorPicker
-                  selectedColor={selectedQuickColor}
-                  onColorChange={setSelectedQuickColor}
-                />
-                <button onClick={handleAddQuickTodo} className="quick-add-btn">
-                  + เพิ่ม
-                </button>
-              </div>
+        <div
+          className={`button-todo-open ${todoopen ? "hidden" : "nohidden"}`}
+          onClick={() => setTodoopen(true)}
+        >
+          open todo
+        </div>
+
+        <div className={`quick-todo-body ${todoopen ? "is-open" : ""}`}>
+          {/* ปุ่ม Close */}
+          <div
+            className="button-todo-close "
+            onClick={() => setTodoopen(false)}
+          >
+            close
+          </div>
+          <div className="quick-todo-inputs">
+            <div>
+              <h2>Create New Task</h2>
+              <input
+                type="text"
+                placeholder="e.g., Homework"
+                value={newQuickText.name}
+                onChange={(e) =>
+                  setNewQuickText({ ...newQuickText, name: e.target.value })
+                }
+                onKeyDown={(e) => e.key === "Enter" && handleAddQuickTodo()}
+                className="quick-input"
+              />
+              <div>Description</div>
+              <input
+                type="text"
+                placeholder="e.g., Meeting"
+                value={newQuickText.value}
+                onChange={(e) =>
+                  setNewQuickText({ ...newQuickText, value: e.target.value })
+                }
+                onKeyDown={(e) => e.key === "Enter" && handleAddQuickTodo()}
+                className="quick-input"
+              />
             </div>
+            <div className="color-picker-container">
+              <ColorPicker
+                selectedColor={selectedQuickColor}
+                onColorChange={setSelectedQuickColor}
+              />
+              <button
+                onClick={() => {
+                  setAlert({
+                    isOpen: true,
+                    source: "quick",
+                    Item: {
+                      id: newQuickText.id,
+                      name: newQuickText.name,
+                      value: newQuickText.value,
+                      color: selectedQuickColor,
+                    },
+                    action: "Add",
+                  });
+                }}
+                className="quick-add-btn"
+                disabled={!!activeQuickId}
+              >
+                + Add
+              </button>
+            </div>
+          </div>
 
-            {quickTodos.length > 0 ? (
-              <div className="quick-todo-list">
-                {quickTodos.map((item) => {
-                  const isActive = activeQuickId === item.id;
-                  return (
-                    <div
-                      key={item.id}
-                      className={`quick-tag ${isActive ? "active" : ""}`}
-                      style={{ backgroundColor: item.color }}
-                      onClick={() =>
-                        setActiveQuickId(isActive ? null : item.id)
-                      }
+          {quickTodos.length > 0 ? (
+            <div className="quick-todo-list">
+              {quickTodos.map((item) => {
+                const isActive = activeQuickId === item.id;
+                return (
+                  <div
+                    key={item.id}
+                    className={`quick-tag ${isActive ? "active" : ""}`}
+                    style={{ backgroundColor: item.color }}
+                    onClick={() => setActiveQuickId(isActive ? null : item.id)}
+                  >
+                    <div>{item.name}</div>
+                    {item.value && (
+                      <span className="quick-tag-value">: {item.value}</span>
+                    )}
+
+                    <button
+                      className="quick-tag-delete"
+                      onClick={() => {
+                        setAlert({
+                          isOpen: true,
+                          Item: {
+                            id: item.id,
+                            name: item.name,
+                            value: item.value,
+                            color: item.color,
+                          },
+                          action: "Delete",
+                        });
+                      }}
+                      title="ลบรายการ"
+                      disabled={!!activeQuickId}
                     >
-                      <div>{item.name}</div>
-                      {item.value && (
-                        <span className="quick-tag-value">: {item.value}</span>
-                      )}
-
-                      <button
-                        className="quick-tag-delete"
-                        onClick={(e) => handleDeleteQuickTodo(e, item.id)}
-                        title="ลบรายการ"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="quick-todo-list">No quick todos available</div>
-            )}
-            {pendingStamps.length > 0 && (
-              <div className="quick-pending-bar">
-                <span>
-                  เลือกไว้ทั้งหมด <strong>{pendingStamps.length}</strong>{" "}
-                  รายการ: 
-                  <div>
-                    {/* 🟢 แก้ไข: ปุ่ม Undo (ย้อนกลับ) */}
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="quick-todo-list">No quick todos available</div>
+          )}
+          {pendingStamps.length > 0 && (
+            <div className="quick-pending-bar">
+              <span>
+                เลือกไว้ทั้งหมด <strong>{pendingStamps.length}</strong> รายการ:
+                <div>
+                  {/* 🟢 แก้ไข: ปุ่ม Undo (ย้อนกลับ) */}
                   <button
                     className="prev-item"
                     onClick={handleUndo}
@@ -532,27 +660,37 @@ export default function Calendar() {
                   >
                     Redo
                   </button>
-                  </div>
-                </span>
-                <div className="quick-actions">
-                  <button
-                    className="btn-cancel"
-                    onClick={() => setPendingStamps([])}
-                  >
-                    Cancel
-                  </button>
-                  <button className="btn-confirm" onClick={handleConfirmSave}>
-                    Confirm
-                  </button>
                 </div>
+              </span>
+              <div className="quick-actions">
+                <button className="btn-cancel" onClick={() => ceartstarte()}>
+                  Cancel
+                </button>
+
+                <button
+                  className="btn-confirm"
+                  onClick={() =>
+                    setAlert({
+                      isOpen: true,
+                      source: "stamp",
+                      Item: {
+                        name: quickTodos.find((q) => q.id === activeQuickId)
+                          ?.name,
+                        value: quickTodos.find((q) => q.id === activeQuickId)
+                          ?.value,
+                        color: quickTodos.find((q) => q.id === activeQuickId)
+                          ?.color,
+                      },
+                      action: "Add",
+                    })
+                  }
+                >
+                  Confirm
+                </button>
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="button-todo-open" onClick={() => setTodoopen(true)}>
-            open
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </section>
     </>
   );
