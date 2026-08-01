@@ -82,7 +82,7 @@ export default function Todolist() {
 
   const [todolist, settodolist] = useState<Partial<Todolist>>({});
   // const [mydataTodolist, dispatch] = useReducer(todoReducer, []);
-  const activeDay: string = day ?? new Date().toISOString().split("T")[0];
+  const activeDay: string = day ?? dayjs().format("YYYY-MM-DD");
 
   const [Statusmode, SetStatusmode] = useState<
     "Add" | "Edit" | "Delete" | null
@@ -330,7 +330,7 @@ export default function Todolist() {
       }
     }
     getData();
-  }, [user?.uid, targetMonth, year, month, monthKey, setTodosCache, todosCache]);
+  }, [user?.uid, monthKey, month, targetMonth , year]);
 
   if (loading) {
     return (
@@ -346,6 +346,7 @@ export default function Todolist() {
           SetOpenAlert={setAlert}
           Isconfirm={Isconfirm}
           OldData={editOldDataInput}
+          Page="Todolist"
         />
       )}
 
@@ -489,7 +490,8 @@ export default function Todolist() {
                         className={css("input")}
                         type="text"
                         name="name"
-                        defaultValue={editOldDataInput.name}
+                        value={todolist.name ?? editOldDataInput.name ?? ""}
+                        key={`edit-name-${editingId}`}
                         placeholder="Edit title"
                         onChange={handleChange}
                       />
@@ -497,7 +499,8 @@ export default function Todolist() {
                         className={css("input")}
                         type="text"
                         name="value"
-                        defaultValue={editOldDataInput.value}
+                        value={todolist.value ?? editOldDataInput.value ?? ""}
+                        key={`edit-value-${editingId}`}
                         placeholder="Edit description"
                         onChange={handleChange}
                       />
@@ -571,7 +574,6 @@ export default function Todolist() {
                           },
                           action: "Delete",
                         });
-                        console.log(todo);
                       }}
                     >
                       Delete

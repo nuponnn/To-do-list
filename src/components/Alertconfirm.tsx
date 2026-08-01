@@ -17,21 +17,26 @@ interface Props {
     }>
   >;
   Isconfirm: () => void;
-
+  pendingStampslength?: number | undefined;
   OldData?: Partial<Todolist>;
+
+  Page: "Calendar" | "Todolist";
 }
 export default function Alertconfirm({
   DataOpenAlert,
   SetOpenAlert,
   Isconfirm,
   OldData,
+  Page,
+  pendingStampslength,
 }: Props) {
   const { Item } = DataOpenAlert;
 
   const hasNameChanged =
     Item?.name !== undefined && Item?.name !== OldData?.name;
 
-  const hasValueChanged = Item?.value !== undefined && Item?.value !== OldData?.value;
+  const hasValueChanged =
+    Item?.value !== undefined && Item?.value !== OldData?.value;
 
   const hasColorChanged =
     Item?.color !== undefined && Item?.color !== OldData?.color;
@@ -40,92 +45,162 @@ export default function Alertconfirm({
     (DataOpenAlert.action === "Edit" && !isEdited) ||
     (DataOpenAlert.action === "Add" && !Item?.name);
 
-  return (
-    <div className="alert-confirm">
-      <div className="container-alert">
-        <h1>Confirm</h1>
-        <h2>{DataOpenAlert.action}</h2>
-        {DataOpenAlert.action === "Add" ? (
-          <>
-            <p>name :{Item?.name}</p>
-            {Item?.value && <p>value :{Item?.value}</p>}
-
-            {Item?.color && (
-              <p>
-                Color:
-                <span
-                  className="color-circle"
-                  style={{
-                    backgroundColor: Item.color,
-                  }}
-                />
-              </p>
-            )}
-          </>
-        ) : DataOpenAlert.action === "Edit" ? (
-          isEdited ? (
+  if (Page == "Calendar")
+    return (
+      <div className="alert-confirm">
+        <div className="container-alert">
+          <h1>Confirm</h1>
+          <h2>{DataOpenAlert.action}</h2>
+          {DataOpenAlert.action === "Add" ? (
             <>
-              {/* แสดงค่าเดิมจาก OldData → ค่าใหม่จาก Item */}
-              {hasNameChanged && (
-                <p>
-                  Name: {OldData?.name} → {Item?.name}
-                </p>
-              )}
-              {hasValueChanged && (
-                <p>
-                  Value: {OldData?.value} → {Item?.value}
-                </p>
-              )}
-              {hasColorChanged && (
+               {isConfirmDisabled && <h5>Please enter a name</h5>}
+              {Item?.name && <p>name :{Item?.name}</p>}
+              {Item?.value && <p>value :{Item?.value}</p>}
+
+              {Item?.color&&!isConfirmDisabled && (
                 <p>
                   Color:
                   <span
                     className="color-circle"
                     style={{
-                      backgroundColor: OldData?.color,
+                      backgroundColor: Item.color,
                     }}
                   />
-                  →
+                </p>
+              )}
+              {pendingStampslength !== undefined && pendingStampslength > 0 && (
+                <p>length: {pendingStampslength}</p>
+              )}
+            </>
+          ) : DataOpenAlert.action === "Delete" ? (
+            <>
+              <p>name :{Item?.name}</p>
+              <p>value :{Item?.value}</p>
+              {Item?.color && (
+                <p>
+                  Color:
                   <span
-                  className="color-circle"
+                    className="color-circle"
                     style={{
-                      backgroundColor: Item?.color,
+                      backgroundColor: Item.color,
                     }}
                   />
                 </p>
               )}
             </>
-          ) : (
-            <h5>Not Changes</h5>
-          )
-        ) : DataOpenAlert.action === "Delete" ? (
-          <>
-            <p>name :{Item?.name}</p>
-            <p>value :{Item?.value}</p>
-          </>
-        ) : null}
+          ) : null}
 
-        <div className="button-container-alert">
-          <button
-            className="button-confirm"
-            onClick={() => {
-              SetOpenAlert({ isOpen: false });
-              Isconfirm();
-            }}
-            disabled={isConfirmDisabled}
-          >
-            Confirm
-          </button>
-          <button
-            className="button"
-            onClick={() => {
-              SetOpenAlert({ isOpen: false });
-            }}
-          >
-            Cancel
-          </button>
+          <div className="button-container-alert">
+            <button
+              className="button-confirm"
+              onClick={() => {
+                SetOpenAlert({ isOpen: false });
+                Isconfirm();
+              }}
+              disabled={isConfirmDisabled}
+            >
+              Confirm
+            </button>
+            <button
+              className="button"
+              onClick={() => {
+                SetOpenAlert({ isOpen: false });
+              }}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  if (Page == "Todolist")
+    return (
+      <div className="alert-confirm">
+        <div className="container-alert">
+          <h1>Confirm</h1>
+          <h2>{DataOpenAlert.action}</h2>
+          {DataOpenAlert.action === "Add" ? (
+            <>
+            {isConfirmDisabled && <h5>Please enter a name</h5>}
+              {Item?.name && <p>name :{Item?.name}</p>}
+              {Item?.value && <p>value :{Item?.value}</p>}
+
+              {Item?.color&&!isConfirmDisabled && (
+                <p>
+                  Color:
+                  <span
+                    className="color-circle"
+                    style={{
+                      backgroundColor: Item.color,
+                    }}
+                  />
+                </p>
+              )}
+            </>
+          ) : DataOpenAlert.action === "Edit" ? (
+            isEdited ? (
+              <>
+                {/* แสดงค่าเดิมจาก OldData → ค่าใหม่จาก Item */}
+                {hasNameChanged && (
+                  <p>
+                    Name: {OldData?.name} → {Item?.name}
+                  </p>
+                )}
+                {hasValueChanged && (
+                  <p>
+                    Value: {OldData?.value} → {Item?.value}
+                  </p>
+                )}
+                {hasColorChanged && (
+                  <p>
+                    Color:
+                    <span
+                      className="color-circle"
+                      style={{
+                        backgroundColor: OldData?.color,
+                      }}
+                    />
+                    →
+                    <span
+                      className="color-circle"
+                      style={{
+                        backgroundColor: Item?.color,
+                      }}
+                    />
+                  </p>
+                )}
+              </>
+            ) : (
+              <h5>Not Changes</h5>
+            )
+          ) : DataOpenAlert.action === "Delete" ? (
+            <>
+              <p>name :{Item?.name}</p>
+              <p>value :{Item?.value}</p>
+            </>
+          ) : null}
+
+          <div className="button-container-alert">
+            <button
+              className="button-confirm"
+              onClick={() => {
+                SetOpenAlert({ isOpen: false });
+                Isconfirm();
+              }}
+              disabled={isConfirmDisabled}
+            >
+              Confirm
+            </button>
+            <button
+              className="button"
+              onClick={() => {
+                SetOpenAlert({ isOpen: false });
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
 }

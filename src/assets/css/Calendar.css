@@ -38,6 +38,52 @@
   --page-w-md: 760px;
   --page-w-lg: 920px;
 }
+/*--------------------color--------------------*/
+.colorArea {
+  display: grid;
+  gap: 8px;
+}
+
+.colorLabel {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.colorRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.colorDot {
+  width: 26px;
+  height: 26px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.colorDotActive {
+  border-color: #334155;
+}
+
+.customColor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.customColor input {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
 
 /* ============================================================
    BASE STYLES
@@ -57,9 +103,8 @@
   border-radius: var(--cal-radius-lg);
   /* แยกตำแหน่ง calendar ออกจากแถบเดือน เพื่อให้เลื่อนลงคงที่ทุกเดือน */
   margin-top: 16px;
-  margin-bottom: 10rem;
+  margin-bottom: 18rem;
 
- 
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.05),
     0 2px 4px -2px rgba(0, 0, 0, 0.05);
@@ -70,10 +115,18 @@
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.05em;
-  color: #94a3b8;
+  /* color: #94a3b8; */
   text-align: center;
 }
 
+/* สีประจำวันสไตล์ Soft Pastel (เข้ากับธีม ขาว-เทา) */
+.day-sun { color: #e57373; } /* อาทิตย์ - แดงนวล */
+.day-mon { color: #e5b839; } /* จันทร์ - เหลืองมัสตาร์ดนุ่มๆ */
+.day-tue { color: #f06292; } /* อังคาร - ชมพูพาสเทล */
+.day-wed { color: #4caf50; } /* พุธ - เขียวซอฟต์ */
+.day-thu { color: #ff9800; } /* พฤหัสบดี - ส้มอุ่น */
+.day-fri { color: #64b5f6; } /* ศุกร์ - ฟ้าพาสเทล */
+.day-sat { color: #ba68c8; } /* เสาร์ - ม่วงลาเวนเดอร์ */
 .year {
   text-align: center;
   /* ใช้โทนเดียวกับ active month เพื่อให้หัวปีไม่หลุดธีมจากแถบเดือน */
@@ -252,45 +305,197 @@
 /* จัดให้ Container หลักติดอยู่ล่างจอเสมอ */
 .quick-todo-body {
   position: fixed;
-  margin-bottom: 2rem;
+  /* margin-bottom: 2rem; */
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
-  
+
+  opacity: 0;
+
   /* ตกแต่งธีมสะอาด น่าใช้ */
   background-color: #ffffff;
   border-top: 1px solid #e5e7eb;
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
   padding: 12px 20px;
-  
+
   display: flex;
   flex-direction: column;
   gap: 10px;
   font-family: inherit;
+
+  transition:
+    max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease-in-out,
+    transform 0.3s ease-in-out,
+    padding 0.3s ease;
+
+  padding-top: 0;
+  padding-bottom: 0;
+  pointer-events: none;
 }
-.conta
-.quick-tag {
+
+.quick-todo-body.is-open {
+  z-index: 10;
+  max-height: 800px; /* กำหนดให้มากกว่าความสูงจริงของเนื้อหา */
+  opacity: 1;
+  transform: translateY(0);
+  padding-top: 16px;
+  padding-bottom: 16px;
+  pointer-events: auto;
+}
+.button-todo-open {
   display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  cursor: pointer;
+  flex-shrink: 0; /* ป้องกันปุ่มถูกบีบเบี้ยวเวลาปุ่มเยอะ */
+
+  border: 1.5px solid rgba(0, 0, 0, 0.12); /* กรอบชัดขึ้น */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+
+  user-select: none;
+
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  opacity: 1;
+  transform: scale(1);
+
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+}
+.button-todo-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  cursor: pointer;
+  flex-shrink: 0; /* ป้องกันปุ่มถูกบีบเบี้ยวเวลาปุ่มเยอะ */
+
+  border: 1.5px solid rgba(0, 0, 0, 0.12); /* กรอบชัดขึ้น */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+
+  user-select: none;
+}
+
+.button-todo-open.hidden {
+  opacity: 0;
+  transform: translateX(-50%) scale(0.95);
+  pointer-events: none;
+  display: none; /* หรือซ่อนออกไปเลย */
+  position: relative;
+}
+
+.quick-todo-list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap; /* บังคับไม่ให้ตกบรรทัด */
+  overflow-x: auto; /* อนุญาตให้เลื่อนซ้าย-ขวา */
+  gap: 8px;
+  padding: 8px 4px; /* เว้นเผื่อเงาปุ่มไม่ให้โดนตัด */
+
+  /* เพิ่มแรงส่งเวลาใช้นิ้วปัดบนมือถือ */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* ซ่อน Scrollbar เพื่อความสะอาดตา (แต่ยังเลื่อนได้ปกติ) */
+.quick-todo-list::-webkit-scrollbar {
+  display: none; /* สำหรับ Chrome, Safari, Opera */
+}
+.quick-todo-list {
+  -ms-overflow-style: none; /* สำหรับ IE and Edge */
+  scrollbar-width: none; /* สำหรับ Firefox */
+}
+
+.quick-tag {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background-color: #f3f4f6;
-  color: #4b5563;
-  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 20px; /* ทรงแคปซูล สะอาดตา */
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  cursor: pointer;
+
+  /* เส้นขอบโปร่งแสง 8% เพื่อให้เข้ากับทุกสีที่ส่งมาจาก item.color */
+  border: 1px solid rgba(0, 0, 0, 0.08);
+
+  /* เงาแบบ Soft Shadow */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  position: relative;
 }
-.quick-tag.active {
-  
-}
-/* ส่วนจัดวาง Input และ ปุ่ม */
-.quick-todo-inputs {
-  display: flex;
+.quick-tag {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  max-width: 800px;
-  margin: 0 auto;
-  width: 100%;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  cursor: pointer;
+  flex-shrink: 0; /* ป้องกันปุ่มถูกบีบเบี้ยวเวลาปุ่มเยอะ */
+
+  border: 1.5px solid rgba(0, 0, 0, 0.12); /* กรอบชัดขึ้น */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+
+  transition:
+    transform 0.1s ease,
+    filter 0.1s ease,
+    box-shadow 0.1s ease,
+    outline 0.1s ease;
+  user-select: none;
+  position: relative;
+}
+
+.quick-tag:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  filter: brightness(0.96);
+}
+
+/* 💥 Active State: จังหวะกด (เห็นชัดมาก!) */
+.quick-tag:active {
+  /* 1. ยุบตัวลงชัดเจน */
+  transform: translateY(2px) scale(0.92);
+
+  /* 2. ดรอปสีปุ่มให้เข้มขึ้นชัดเจนถึง 25% */
+  filter: brightness(0.75);
+
+  /* 3. ยุบเงาลงแน่นๆ */
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+
+  /* 4. เพิ่มเส้นขอบวงนอก (Ring Effect) ให้เด้งเตะตาเวลากด */
+  outline: 2px solid rgba(0, 0, 0, 0.3);
+  outline-offset: 1px;
+}
+
+/* 🎯 Selected State: เมื่อถูกเลือกอยู่ (.active) */
+.quick-tag.active {
+  border-color: #1f2937; /* ขอบดำเข้ม */
+  box-shadow:
+    0 0 0 2px #1f2937,
+    0 2px 4px rgba(0, 0, 0, 0.1); /* วงแหวนล้อมรอบ */
+  filter: brightness(0.92);
 }
 
 /* ช่องพิมพ์ข้อความ */
@@ -301,6 +506,7 @@
   border-radius: 8px;
   font-size: 14px;
   outline: none;
+
   transition: border-color 0.2s;
 }
 
@@ -348,7 +554,6 @@
   border-top: 1px dashed #f3f4f6;
 }
 
-/* จัดกลุ่มปุ่ม Cancel / Confirm */
 .quick-todo-body > div:last-child > div {
   display: flex;
   gap: 8px;
@@ -378,7 +583,6 @@
   cursor: pointer;
   font-weight: 500;
 }
-
 .quick-todo-body button:nth-of-type(2):not(.quick-add-btn):hover {
   background-color: #059669;
 }
@@ -391,6 +595,7 @@
 @media (max-width: 320px) {
   .Caleder-page {
     margin: 76px 0 0;
+    margin-bottom: 4rem;
     overflow-x: auto;
   }
   .month-slider-view {
@@ -440,6 +645,7 @@
   .Caleder-page {
     /* เผื่อพื้นที่ให้ปีไม่โดน navbar แบบ fixed ทับในจอมือถือ */
     margin: 76px auto 1rem;
+    margin-bottom: 4rem;
   }
   .month-slider-view {
     width: min(100%, 340px);
@@ -452,7 +658,10 @@
     gap: var(--cal-gap);
     padding: var(--cal-padding);
     /* ล็อกหัววัน + 6 แถววันไว้ตายตัว เพื่อให้ช่องวันไม่ถูกบีบเมื่อเดือนมี 6 แถว */
-    grid-template-rows: var(--weekday-height) repeat(6, clamp(72px, 10vw + 40px, 88px));
+    grid-template-rows: var(--weekday-height) repeat(
+        6,
+        clamp(72px, 10vw + 40px, 88px)
+      );
     grid-template-columns: repeat(
       7,
       min(54px, calc((100% - var(--cal-gap) * 6 - var(--cal-padding) * 2) / 7))
@@ -480,6 +689,7 @@
 @media (481px <= width <= 768px) {
   .Caleder-page {
     margin: 76px 0 0;
+    margin-bottom: 5rem;
     overflow-x: auto;
   }
   .month-slider-view {
@@ -520,6 +730,7 @@
   .Caleder-page {
     width: min(100%, var(--page-w-md));
     margin: 78px auto 1rem;
+    margin-bottom: 5rem;
   }
 
   .calendar {
@@ -536,6 +747,15 @@
   .day-container {
     height: var(--day-height-md);
     padding: var(--day-padding-md);
+  }
+  .quick-todo-body {
+    width: 60%;
+    align-self: center;
+    justify-self: center;
+    border-radius: 16px;
+
+    background-color: rgba(0, 0, 0, 0.0001);
+    backdrop-filter: blur(10px);
   }
 }
 
@@ -561,6 +781,14 @@
     padding: var(--day-padding-md);
     height: var(--day-height-md);
   }
+  .quick-todo-body {
+    width: 60%;
+    align-self: center;
+    justify-self: center;
+    border-radius: 16px;
+    background-color: rgba(0, 0, 0, 0.0001);
+    backdrop-filter: blur(10px);
+  }
 }
 
 /* 2XL — > 1200px */
@@ -583,6 +811,14 @@
 
   .day-container {
     padding: var(--day-padding-lg);
-      height: var(--day-height-md);
+    height: var(--day-height-md);
+  }
+  .quick-todo-body {
+    width: 60%;
+    align-self: center;
+    justify-self: center;
+    border-radius: 16px;
+    background-color: rgba(0, 0, 0, 0.0001);
+    backdrop-filter: blur(10px);
   }
 }

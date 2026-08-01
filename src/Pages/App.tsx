@@ -164,6 +164,7 @@ export default function App() {
                       value: e.target.value,
                     })
                   }
+                  id="email"
                 />
                 <label htmlFor="email">Email</label>
               </div>
@@ -179,6 +180,7 @@ export default function App() {
                       value: e.target.value,
                     })
                   }
+                  id="password"
                 />
                 <label htmlFor="password">Password</label>
               </div>
@@ -196,6 +198,7 @@ export default function App() {
                           value: e.target.value,
                         })
                       }
+                      id="confirmPassword"
                     />
                     <label htmlFor="confirmPassword">Confirm Password</label>
                   </>
