@@ -59,16 +59,6 @@ function ColorPicker({ selectedColor, onColorChange }: ColorPickerProps) {
   );
 }
 
-const daysWithColors = [
-  { name: "sun", color: "day-sun" },
-  { name: "mon", color: "day-mon" },
-  { name: "tue", color: "day-tue" },
-  { name: "wed", color: "day-wed" },
-  { name: "thu", color: "day-thu" },
-  { name: "fri", color: "day-fri" },
-  { name: "sat", color: "day-sat" },
-];
-
 export default function Calendar() {
   const { user } = AuthContext();
   const navigate = useNavigate();
@@ -118,6 +108,16 @@ export default function Calendar() {
   const [direction, setDirection] = useState<"next" | "prev" | "">("");
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const transitionDuration = 300; // ระยะเวลาในการเลื่อน (ms)
+
+  const daysWithColors = [
+    { name: "sun", color: "day-sun" },
+    { name: "mon", color: "day-mon" },
+    { name: "tue", color: "day-tue" },
+    { name: "wed", color: "day-wed" },
+    { name: "thu", color: "day-thu" },
+    { name: "fri", color: "day-fri" },
+    { name: "sat", color: "day-sat" },
+  ];
 
   //---------------------------todo list---------------------------
   const [newQuickText, setNewQuickText] = useState<Partial<QuickTodo>>({
@@ -406,11 +406,11 @@ export default function Calendar() {
 
     return (
       <div className="calendar">
-       {daysWithColors.map(({ name, color }) => (
-  <div key={name} className={color}>
-    {name}
-  </div>
-))}
+        {daysWithColors.map(({ name, color }) => (
+          <div key={name} className={color}>
+            {name}
+          </div>
+        ))}
         {emptyfirstDays.map((_, index) => (
           <div key={index} />
         ))}
@@ -475,19 +475,7 @@ export default function Calendar() {
         ))}
       </div>
     );
-  }, [
-    Selectedday,
-    activeQuickId,
-    currentDate,
-    days,
-    emptyfirstDays,
-    emtyLastDays,
-    isCurrentMonth,
-    monthKey,
-    pendingStamps,
-    todayDate,
-    todosCache,
-  ]);
+  }, [Selectedday, currentDate, days, isCurrentMonth, monthKey, todayDate]);
 
   return (
     <>

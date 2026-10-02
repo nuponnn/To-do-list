@@ -332,6 +332,8 @@ export default function Todolist() {
     getData();
   }, [user?.uid, monthKey, month, targetMonth , year]);
 
+ // console.log("Todos Cache:", todosCache); // ตรวจสอบค่า todosCache ใน console
+  
   if (loading) {
     return (
       <div style={{ textAlign: "center", padding: "50px" }}>Loading App...</div>
