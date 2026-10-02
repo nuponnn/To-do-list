@@ -12,7 +12,14 @@ const router = createBrowserRouter([
     path: "/",
     element: <MainLayout />,
     children: [
-      { path: "/", element: <App /> },
+      {
+        path: "/",
+        element: (
+          <ProtectedRoute allowAuthenticated={false} fallbackPath="/calendar">
+            <App />
+          </ProtectedRoute>
+        ),
+      },
       {
         path: "/calendar",
         element: (

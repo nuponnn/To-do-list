@@ -1,8 +1,4 @@
 import { useReducer } from "react";
-// import reactLogo from './assets/react.svg'
-// import viteLogo from './assets/vite.svg'
-// import heroImg from './assets/hero.png'
-
 
 import { db } from "../firebase";
 import { doc, writeBatch } from "firebase/firestore";
@@ -83,8 +79,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
   }
 }
 
-
-
 export default function App() {
   const { user, login, signup } = AuthContext();
 
@@ -109,7 +103,7 @@ export default function App() {
           authState.password,
         );
         const uid = userCredential.user.uid;
-
+      // ตรวจสอบค่า uid ใน console
         // 3. เตรียมข้อมูล (ไม่ต้อง await เพราะ batch.set ทำงานทันทีในเครื่อง)
         const userRef = doc(db, "AuthUser", uid);
         const logRef = doc(db, "UserData", uid); // สมมติว่าต้องการเก็บ 2 ที่
@@ -147,94 +141,93 @@ export default function App() {
   }
 
   return (
-    
-        <>
-          <section className="auth-container">
-            <h1>{authState.Mode === "signin" ? "Sign In" : "Sign Up"}</h1>
-            <form onSubmit={submitHandler} className="auth-form">
-              <div className="input-group">
-                <input
-                  type="text"
-                  placeholder="email"
-                  value={authState.email}
-                  onChange={(e) =>
-                    dispatch({
-                      type: "SET_FIELD",
-                      field: "email",
-                      value: e.target.value,
-                    })
-                  }
-                  id="email"
-                />
-                <label htmlFor="email">Email</label>
-              </div>
-              <div className="input-group">
+    <>
+      <section className="auth-container">
+        <h1>{authState.Mode === "signin" ? "Sign In" : "Sign Up"}</h1>
+        <form onSubmit={submitHandler} className="auth-form">
+          <div className="input-group">
+            <input
+              type="text"
+              placeholder="email"
+              value={authState.email}
+              onChange={(e) =>
+                dispatch({
+                  type: "SET_FIELD",
+                  field: "email",
+                  value: e.target.value,
+                })
+              }
+              id="email"
+            />
+            <label htmlFor="email">Email</label>
+          </div>
+          <div className="input-group">
+            <input
+              type="password"
+              placeholder="password"
+              value={authState.password}
+              onChange={(e) =>
+                dispatch({
+                  type: "SET_FIELD",
+                  field: "password",
+                  value: e.target.value,
+                })
+              }
+              id="password"
+            />
+            <label htmlFor="password">Password</label>
+          </div>
+          <div className="input-group">
+            {authState.Mode === "signup" && (
+              <>
                 <input
                   type="password"
-                  placeholder="password"
-                  value={authState.password}
+                  placeholder="Confirm Password"
+                  value={authState.confirmPassword}
                   onChange={(e) =>
                     dispatch({
                       type: "SET_FIELD",
-                      field: "password",
+                      field: "confirmPassword",
                       value: e.target.value,
                     })
                   }
-                  id="password"
+                  id="confirmPassword"
                 />
-                <label htmlFor="password">Password</label>
-              </div>
-              <div className="input-group">
-                {authState.Mode === "signup" && (
-                  <>
-                    <input
-                      type="password"
-                      placeholder="Confirm Password"
-                      value={authState.confirmPassword}
-                      onChange={(e) =>
-                        dispatch({
-                          type: "SET_FIELD",
-                          field: "confirmPassword",
-                          value: e.target.value,
-                        })
-                      }
-                      id="confirmPassword"
-                    />
-                    <label htmlFor="confirmPassword">Confirm Password</label>
-                  </>
-                )}
-              </div>
-              {authState.error && (
-                <div className="error-box">{authState.error}</div>
-              )}
+                <label htmlFor="confirmPassword">Confirm Password</label>
+              </>
+            )}
+          </div>
+          {authState.error && (
+            <div className="error-box">{authState.error}</div>
+          )}
+          {authState.isLoading ? (
+            "Loading..."
+          ) : (
+            <>
+              <button type="submit" className="submit-button button-auth">
+                {authState.Mode !== "signin" ? " Sign Up" : "Sign In"}
+              </button>
+
               {authState.isLoading ? (
                 "Loading..."
               ) : (
-                <>
-                  <button type="submit" className="submit-button button-auth">
-                    {authState.Mode !== "signin" ? " Sign Up" : "Sign In"}
-                  </button>
-
-                  {authState.isLoading ? (
-                    "Loading..."
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => dispatch({ type: "SWITCH_MODE" })}
-                      className="switch-mode-button "
-                    >
-                      {authState.Mode === "signin"
-                        ? "Don't have an account? Sign Up"
-                        : "Already have an account?Sign In"}
-                    </button>
-                  )}
-                </>
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: "SWITCH_MODE" })}
+                  className="switch-mode-button "
+                >
+                  {authState.Mode === "signin"
+                    ? "Don't have an account? Sign Up"
+                    : "Already have an account?Sign In"}
+                </button>
               )}
-            </form>
-          </section>
+            </>
+          )}
+        </form>
+      </section>
 
-          {/* ********************************************** */}
-          {/* <section id="center">
+      {/* ********************************************** */}
+      {/* <section id="center">
         <div className="hero">
           <img src={heroImg} className="base" width="170" height="179" alt="" />
           <img src={reactLogo} className="framework" alt="React logo" />
@@ -339,7 +332,6 @@ export default function App() {
 
       <div className="ticks"></div>
       <section id="spacer"></section> */}
-        </>
-  
+    </>
   );
 }
