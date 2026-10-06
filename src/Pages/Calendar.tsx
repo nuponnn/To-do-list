@@ -3,61 +3,29 @@ import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import "../assets/css/Calendar.css";
 import { AuthContext } from "../Context/AuthPreventContext";
-import { services, type Todolist } from "../components/services";
+import { services, type QuickTodo, type Todolist } from "../components/services";
 import { useTodo } from "../Context/TodoProvider";
+import ColorPicker from "../components/ColorPicker";
+import { hasRealColor, resolveTextColor, type TagColor } from "../constants/color";
 import Alertconfirm from "../components/Alertconfirm";
 
 interface PendingStamp {
   dateKey: string; // เช่น "2026-07-26"
   name: string; // ชื่อ Todo
   value?: string; // ค่าของ Todo (ไม่บังคับ)
-  color: string; // สี
-}
-interface QuickTodo {
-  id: string; // ID ของ Quick Todo
-  name: string; // ชื่อ Todo
-  value?: string; // ค่าของ Todo (ไม่บังคับ)
-  color: string; // สี
-}
-interface ColorPickerProps {
-  selectedColor: string;
-  onColorChange: (color: string) => void;
+  color?: TagColor; // ไม่มี field = ไม่มีสี
+  textColor?: TagColor;
 }
 
-function ColorPicker({ selectedColor, onColorChange }: ColorPickerProps) {
-  const defaultColors = [
-    { name: "แดง", code: "#ff4d4d" },
-    { name: "ฟ้า", code: "#4da6ff" },
-    { name: "เขียว", code: "#5cd65c" },
-    { name: "เหลือง", code: "#ffdb4d" },
-  ];
-
-  return (
-    <div className="colorArea">
-      <span className="colorLabel">สีแท็ก</span>
-      <div className="colorRow">
-        {defaultColors.map((c) => (
-          <button
-            key={c.code}
-            type="button"
-            aria-label={c.name}
-            onClick={() => onColorChange(c.code)}
-            className={`colorDot ${selectedColor === c.code ? "colorDotActive" : ""}`}
-            style={{ backgroundColor: c.code }}
-          />
-        ))}
-        <label className="customColor">
-          <input
-            type="color"
-            value={selectedColor}
-            onChange={(e) => onColorChange(e.target.value)}
-          />
-          custom
-        </label>
-      </div>
-    </div>
-  );
-}
+const DAYS_WITH_COLORS = [
+  { name: "sun", color: "day-sun" },
+  { name: "mon", color: "day-mon" },
+  { name: "tue", color: "day-tue" },
+  { name: "wed", color: "day-wed" },
+  { name: "thu", color: "day-thu" },
+  { name: "fri", color: "day-fri" },
+  { name: "sat", color: "day-sat" },
+] as const;
 
 export default function Calendar() {
   const { user } = AuthContext();
@@ -109,22 +77,16 @@ export default function Calendar() {
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const transitionDuration = 300; // ระยะเวลาในการเลื่อน (ms)
 
-  const daysWithColors = [
-    { name: "sun", color: "day-sun" },
-    { name: "mon", color: "day-mon" },
-    { name: "tue", color: "day-tue" },
-    { name: "wed", color: "day-wed" },
-    { name: "thu", color: "day-thu" },
-    { name: "fri", color: "day-fri" },
-    { name: "sat", color: "day-sat" },
-  ];
-
   //---------------------------todo list---------------------------
   const [newQuickText, setNewQuickText] = useState<Partial<QuickTodo>>({
     name: "",
-    color: "#ffffff",
   });
-  const [selectedQuickColor, setSelectedQuickColor] = useState("#ffffff");
+  const [selectedQuickColor, setSelectedQuickColor] = useState<
+    TagColor | undefined
+  >(undefined);
+  const [selectedQuickTextColor, setSelectedQuickTextColor] = useState<
+    TagColor | undefined
+  >(undefined);
   // เก็บ QuickTodo
   const [quickTodos, setQuickTodos] = useState<QuickTodo[]>([]);
   // สถานะของ QuickTodo ที่กำลัง active อยู่
@@ -154,6 +116,40 @@ export default function Calendar() {
     setRedoHistory((prev) => prev.slice(0, -1));
   };
 
+  const resetCalendarComposer = () => {
+    setNewQuickText({ name: "" });
+    setSelectedQuickColor(undefined);
+    setSelectedQuickTextColor(undefined);
+    setActiveQuickId(null);
+    setPendingStamps([]);
+    setRedoHistory([]);
+    setAlert({ isOpen: false });
+  };
+
+  const openQuickTodoConfirm = () => {
+    setAlert({
+      isOpen: true,
+      source: "quick",
+      Item: {
+        id: newQuickText.id,
+        name: newQuickText.name,
+        value: newQuickText.value,
+        color: selectedQuickColor,
+        textColor: selectedQuickTextColor,
+      },
+      action: "Add",
+    });
+  };
+
+  const openStampConfirm = () => {
+    setAlert({
+      isOpen: true,
+      source: "stamp",
+      Item: {},
+      action: "Add",
+    });
+  };
+
   const Selectedday = useCallback(
     (day: number) => {
       const dateStr = currentDate.date(day).format("YYYY-MM-DD");
@@ -171,6 +167,7 @@ export default function Calendar() {
             return prev.filter((_, index) => index !== existsIndex);
           }
 
+          setRedoHistory([]);
           return [
             ...prev,
             {
@@ -178,10 +175,10 @@ export default function Calendar() {
               name: targetQuick.name,
               value: targetQuick.value,
               color: targetQuick.color,
+              textColor: targetQuick.textColor,
             },
           ];
         });
-        setRedoHistory([]);
         return; // ไม่ต้อง navigate ไปหน้าอื่นเมื่อมี QuickTodo active
       }
       navigate("/to-do-list/" + dateStr);
@@ -206,6 +203,7 @@ export default function Calendar() {
             createdAt: new Date(),
             datekey: item.dateKey,
             color: item.color,
+            textColor: item.textColor,
           };
           const savedId = await services.addTodo(
             user.uid,
@@ -234,6 +232,7 @@ export default function Calendar() {
       // 3.3 ล้าง State ทั้งหมดเมื่อบันทึกสำเร็จ
       setPendingStamps([]);
       setActiveQuickId(null);
+      setRedoHistory([]);
     } catch (error) {
       console.error("Error saving pending stamps:", error);
       alert("เกิดข้อผิดพลาดในการบันทึก");
@@ -246,6 +245,7 @@ export default function Calendar() {
       name: newQuickText.name.trim(),
       value: newQuickText.value?.trim() || "",
       color: selectedQuickColor,
+      textColor: selectedQuickTextColor,
     };
     try {
       // ยิงบันทึกลง Firestore
@@ -253,7 +253,9 @@ export default function Calendar() {
 
       // อัปเดต State หน้าจอทันที
       setQuickTodos((prev) => [...prev, { id: savedId, ...newItemData }]);
-      setNewQuickText({ name: "", value: "", color: "#ffffff" });
+      setNewQuickText({ name: "" });
+      setSelectedQuickColor(undefined);
+      setSelectedQuickTextColor(undefined);
     } catch (error) {
       console.error("Error adding quick todo:", error);
     }
@@ -291,25 +293,6 @@ export default function Calendar() {
         return null;
     }
   }
-  const ceartstarte = () => {
-    // 2. Reset Quick Todo Creation Inputs
-    setNewQuickText({
-      name: "",
-      value: "",
-      color: "#ffffff",
-    });
-    setSelectedQuickColor("#ffffff");
-
-    // 3. Reset Quick Todo Selection & Pending Stamps
-    setActiveQuickId(null);
-    setPendingStamps([]);
-    setRedoHistory([]);
-
-    // 4. Reset UI Modals & Panels
-    setAlert({ isOpen: false });
-
-    // 5. Reset Quick Todo List Data (ถ้าต้องการล้างรายการ Quick Todo ทั้งหมดออกจากหน้าจอ)
-  };
   //---------------------------end todo list---------------------------
 
   const displayedMonths = [
@@ -398,15 +381,9 @@ export default function Calendar() {
   }, [user?.uid, monthKey, month, setTodosCache, todosCache, year]);
 
   const calendar = useMemo(() => {
-    // เหตุผล: ใช้เฉพาะตอนแสดงผลใน Calendar เพื่อดัน todo ที่มีสีจริงขึ้นบนสุด โดยไม่เปลี่ยนลำดับข้อมูลต้นฉบับใน cache
-    const hasTodoColor = (color?: string) => {
-      const normalizedColor = color?.trim().toLowerCase();
-      return Boolean(normalizedColor && normalizedColor !== "#ffffff");
-    };
-
     return (
       <div className="calendar">
-        {daysWithColors.map(({ name, color }) => (
+        {DAYS_WITH_COLORS.map(({ name, color }) => (
           <div key={name} className={color}>
             {name}
           </div>
@@ -420,8 +397,7 @@ export default function Calendar() {
           // ดึง List ของเดือนปัจจุบันออกมา ถ้ายังไม่มีให้เป็น Array ว่าง
           const todosForDay = todosCache[monthKey]?.[dayKey] || [];
           const sortedTodosForDay = [...todosForDay].sort(
-            (a, b) =>
-              Number(hasTodoColor(b.color)) - Number(hasTodoColor(a.color)),
+            (a, b) => Number(hasRealColor(b.color)) - Number(hasRealColor(a.color)),
           );
           const currentPendingForDay = pendingStamps.filter(
             (item) => item.dateKey === dayKey,
@@ -447,7 +423,10 @@ export default function Calendar() {
                 {sortedTodosForDay.map((todo) => (
                   <div
                     key={todo?.id}
-                    style={{ background: todo?.color ?? "#fff8f8" }}
+                    style={{
+                      background: todo?.color ?? "#fff8f8",
+                      color: resolveTextColor(todo?.color, todo?.textColor),
+                    }}
                     className="todolist-content"
                   >
                     {todo?.name}
@@ -458,7 +437,8 @@ export default function Calendar() {
                 <div
                   key={`pending-${idx}`}
                   style={{
-                    background: pItem.color,
+                    background: pItem.color ?? "#ffffff",
+                    color: resolveTextColor(pItem.color, pItem.textColor),
                     opacity: 0.6, // ทำให้จางลงเล็กน้อย
                     border: "1px dashed #000", // ใส่เส้นประ
                   }}
@@ -475,7 +455,19 @@ export default function Calendar() {
         ))}
       </div>
     );
-  }, [Selectedday, currentDate, days, isCurrentMonth, monthKey, todayDate]);
+  }, [
+    Selectedday,
+    activeQuickId,
+    currentDate,
+    days,
+    emptyfirstDays,
+    emtyLastDays,
+    isCurrentMonth,
+    monthKey,
+    pendingStamps,
+    todayDate,
+    todosCache,
+  ]);
 
   return (
     <>
@@ -543,7 +535,7 @@ export default function Calendar() {
                 onChange={(e) =>
                   setNewQuickText({ ...newQuickText, name: e.target.value })
                 }
-                onKeyDown={(e) => e.key === "Enter" && handleAddQuickTodo()}
+                onKeyDown={(e) => e.key === "Enter" && openQuickTodoConfirm()}
                 className="quick-input"
               />
               <div>Description</div>
@@ -554,29 +546,19 @@ export default function Calendar() {
                 onChange={(e) =>
                   setNewQuickText({ ...newQuickText, value: e.target.value })
                 }
-                onKeyDown={(e) => e.key === "Enter" && handleAddQuickTodo()}
+                onKeyDown={(e) => e.key === "Enter" && openQuickTodoConfirm()}
                 className="quick-input"
               />
             </div>
             <div className="color-picker-container">
               <ColorPicker
-                selectedColor={selectedQuickColor}
-                onColorChange={setSelectedQuickColor}
+                value={selectedQuickColor}
+                onChange={setSelectedQuickColor}
+                textValue={selectedQuickTextColor}
+                onTextChange={setSelectedQuickTextColor}
               />
               <button
-                onClick={() => {
-                  setAlert({
-                    isOpen: true,
-                    source: "quick",
-                    Item: {
-                      id: newQuickText.id,
-                      name: newQuickText.name,
-                      value: newQuickText.value,
-                      color: selectedQuickColor,
-                    },
-                    action: "Add",
-                  });
-                }}
+                onClick={openQuickTodoConfirm}
                 className="quick-add-btn"
                 disabled={!!activeQuickId}
               >
@@ -593,7 +575,10 @@ export default function Calendar() {
                   <div
                     key={item.id}
                     className={`quick-tag ${isActive ? "active" : ""}`}
-                    style={{ backgroundColor: item.color }}
+                    style={{
+                      backgroundColor: item.color ?? "#ffffff",
+                      color: resolveTextColor(item.color, item.textColor),
+                    }}
                     onClick={() => setActiveQuickId(isActive ? null : item.id)}
                   >
                     <div>{item.name}</div>
@@ -602,8 +587,10 @@ export default function Calendar() {
                     )}
 
                     <button
+                      type="button"
                       className="quick-tag-delete"
-                      onClick={() => {
+                      onClick={(event) => {
+                        event.stopPropagation();
                         setAlert({
                           isOpen: true,
                           Item: {
@@ -611,6 +598,7 @@ export default function Calendar() {
                             name: item.name,
                             value: item.value,
                             color: item.color,
+                            textColor: item.textColor,
                           },
                           action: "Delete",
                         });
@@ -651,27 +639,13 @@ export default function Calendar() {
                 </div>
               </span>
               <div className="quick-actions">
-                <button className="btn-cancel" onClick={() => ceartstarte()}>
+                <button className="btn-cancel" onClick={resetCalendarComposer}>
                   Cancel
                 </button>
 
                 <button
                   className="btn-confirm"
-                  onClick={() =>
-                    setAlert({
-                      isOpen: true,
-                      source: "stamp",
-                      Item: {
-                        name: quickTodos.find((q) => q.id === activeQuickId)
-                          ?.name,
-                        value: quickTodos.find((q) => q.id === activeQuickId)
-                          ?.value,
-                        color: quickTodos.find((q) => q.id === activeQuickId)
-                          ?.color,
-                      },
-                      action: "Add",
-                    })
-                  }
+                  onClick={openStampConfirm}
                 >
                   Confirm
                 </button>

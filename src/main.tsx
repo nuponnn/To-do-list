@@ -8,6 +8,7 @@ import "./assets/css/index.css";
 import AuthPreventContext from "./Context/AuthPreventContext";
 import { router } from "./Router";
 import TodoProvider from "./Context/TodoProvider";
+import ColorProvider from "./Context/ColorProvider";
 
 import AppReadyProviderContext, {
   useAppReady,
@@ -57,11 +58,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <Suspense fallback="Loading...">
       <AuthPreventContext>
         <TodoProvider>
-          <AppReadyProviderContext>
-            <AppGate>
-              <RouterProvider router={router} />
-            </AppGate>
-          </AppReadyProviderContext>
+          <ColorProvider>
+            <AppReadyProviderContext>
+              <AppGate>
+                <RouterProvider router={router} />
+              </AppGate>
+            </AppReadyProviderContext>
+          </ColorProvider>
         </TodoProvider>
       </AuthPreventContext>
     </Suspense>

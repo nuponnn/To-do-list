@@ -12,9 +12,9 @@ export default function Navbar() {
       <div className="nav-container">
         {/* กลุ่มลิงก์เมนูฝั่งซ้าย */}
         <div className="nav-links">
-          <Link to="/" className={`nav-item ${location.pathname === "/" ? "active" : ""}`}>
+          {/* <Link to="/" className={`nav-item ${location.pathname === "/" ? "active" : ""}`}>
             Home
-          </Link>
+          </Link> */}
           <Link to="/calendar" className={`nav-item ${location.pathname === "/calendar" ? "active" : ""}`}>
             Calendar
           </Link>

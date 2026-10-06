@@ -39,51 +39,6 @@
   --page-w-lg: 920px;
 }
 /*--------------------color--------------------*/
-.colorArea {
-  display: grid;
-  gap: 8px;
-}
-
-.colorLabel {
-  color: #475569;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.colorRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.colorDot {
-  width: 26px;
-  height: 26px;
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.colorDotActive {
-  border-color: #334155;
-}
-
-.customColor {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #64748b;
-  font-size: 12px;
-}
-
-.customColor input {
-  width: 28px;
-  height: 28px;
-  border: 0;
-  padding: 0;
-  background: transparent;
-}
 
 /* ============================================================
    BASE STYLES
@@ -512,16 +467,6 @@
 
 .quick-input:focus {
   border-color: #3b82f6;
-}
-
-/* ตัวเลือกสี */
-.quick-color-picker {
-  width: 38px;
-  height: 38px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  background: transparent;
 }
 
 /* ปุ่มเพิ่ม */
