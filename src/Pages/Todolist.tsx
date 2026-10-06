@@ -4,6 +4,8 @@ import { AuthContext } from "../Context/AuthPreventContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { services } from "../components/services";
 import Alertconfirm from "../components/Alertconfirm";
+import ColorPicker from "../components/ColorPicker";
+import { hasRealColor, resolveTextColor, type TagColor } from "../constants/color";
 import { useTodo } from "../Context/TodoProvider";
 import dayjs from "dayjs";
 import styles from "../assets/css/Todolist.module.css";
@@ -14,65 +16,6 @@ const css = (...classNames: Array<string | false | null | undefined>) =>
     .filter(Boolean)
     .map((className) => styles[className as string] || className)
     .join(" ");
-
-// interface Todolist {
-//   id: string;
-//   name: string;
-//   value?: string;
-//   complete: boolean;
-//   createdAt: Date;
-//   datekey: string;
-//   color?: string;
-//   icon?: string;
-// }
-// type Action =
-//   | { type: "SET_TODOS"; payload: Todolist[] }
-//   | { type: "ADD_TODO"; payload: Todolist }
-//   | { type: "UPDATE_TODO"; payload: { id: string; updates: Partial<Todolist> } }
-//   | { type: "DELETE_TODO"; payload: string };
-
-interface ColorPickerProps {
-  selectedColor: string;
-  onColorChange: (color: string) => void;
-}
-
-function ColorPicker({ selectedColor, onColorChange }: ColorPickerProps) {
-  const defaultColors = [
-    { name: "แดง", code: "#ff4d4d" },
-    { name: "ฟ้า", code: "#4da6ff" },
-    { name: "เขียว", code: "#5cd65c" },
-    { name: "เหลือง", code: "#ffdb4d" },
-  ];
-
-  return (
-    <div className="colorArea">
-      <span className="colorLabel">สีแท็ก</span>
-      <div className="colorRow">
-        {defaultColors.map((c) => (
-          <button
-            key={c.code}
-            type="button"
-            aria-label={c.name}
-            onClick={() => onColorChange(c.code)}
-            className={css(
-              "colorDot",
-              selectedColor === c.code && "colorDotActive",
-            )}
-            style={{ backgroundColor: c.code }}
-          />
-        ))}
-        <label className={css("customColor")}>
-          <input
-            type="color"
-            value={selectedColor}
-            onChange={(e) => onColorChange(e.target.value)}
-          />
-          custom
-        </label>
-      </div>
-    </div>
-  );
-}
 
 export default function Todolist() {
   const { user, loading } = AuthContext();
@@ -92,7 +35,12 @@ export default function Todolist() {
     name: "",
     value: "",
   });
-  const [selectedColor, setSelectedColor] = useState<string>("#ffffff");
+  const [selectedColor, setSelectedColor] = useState<TagColor | undefined>(
+    undefined,
+  );
+  const [selectedTextColor, setSelectedTextColor] = useState<
+    TagColor | undefined
+  >(undefined);
   const [Alert, setAlert] = useState<{
     isOpen: boolean;
     action?: "Add" | "Edit" | "Delete";
@@ -104,6 +52,25 @@ export default function Todolist() {
   const year = dayjs(activeDay).format("YYYY");
   const month = dayjs(activeDay).format("MM");
   const monthKey = dayjs(activeDay).format("YYYY-MM");
+
+  const resetTaskForm = () => {
+    settodolist({});
+    setEditOldDataInput({ name: "", value: "" });
+    setSelectedColor(undefined);
+    setSelectedTextColor(undefined);
+    setEditingId(null);
+  };
+
+  const closeManageMode = () => {
+    SetStatusmode(null);
+    resetTaskForm();
+  };
+
+  const startAddMode = () => {
+    resetTaskForm();
+    SetStatusmode("Add");
+  };
+
   //-----------------function updateDayCache ------------------
 
   function updateDayCache(
@@ -128,14 +95,9 @@ export default function Todolist() {
 
   // เหตุผล: แยกรายการที่มีสีจริงให้ขึ้นบนสุด เพื่อให้ task สำคัญเห็นก่อน แต่ยังคงเรียง task ที่ยังไม่เสร็จก่อน task ที่เสร็จเหมือนเดิม
   const sortedTodolist = useMemo(() => {
-    const hasTodoColor = (color?: string) => {
-      const normalizedColor = color?.trim().toLowerCase();
-      return Boolean(normalizedColor && normalizedColor !== "#ffffff");
-    };
-
     return [...mydataTodolist].sort((a, b) => {
       const colorPriority =
-        Number(hasTodoColor(b.color)) - Number(hasTodoColor(a.color));
+        Number(hasRealColor(b.color)) - Number(hasRealColor(a.color));
 
       if (colorPriority !== 0) return colorPriority;
 
@@ -178,6 +140,7 @@ export default function Todolist() {
         createdAt: new Date(),
         datekey: activeDay,
         color: selectedColor,
+        textColor: selectedTextColor,
       };
 
       const savedId = await services.addTodo(
@@ -196,9 +159,7 @@ export default function Todolist() {
         newTodoIntoCache,
       ]);
       alert("Add To Do Success");
-      settodolist({});
-      setSelectedColor("#ffffff");
-      SetStatusmode(null);
+      closeManageMode();
     } catch (error) {
       console.log(error);
     }
@@ -211,8 +172,10 @@ export default function Todolist() {
       name: todo.name,
       value: todo.value,
       color: todo.color,
+      textColor: todo.textColor,
     });
-    setSelectedColor(todo.color || "#ffffff");
+    setSelectedColor(todo.color);
+    setSelectedTextColor(todo.textColor);
     settodolist({});
   }
 
@@ -224,6 +187,7 @@ export default function Todolist() {
         name: todolist.name ?? editOldDataInput.name,
         value: todolist.value ?? editOldDataInput.value,
         color: selectedColor,
+        textColor: selectedTextColor,
       };
 
       await services.updateTodo(user.uid, year, month, id, updates);
@@ -231,9 +195,7 @@ export default function Todolist() {
         todos.map((t) => (t.id === id ? { ...t, ...updates, id } : t)),
       );
       alert("Edit To Do Success");
-      settodolist({});
-      setEditOldDataInput({ name: "", value: "" });
-      setEditingId(null);
+      resetTaskForm();
     } catch (error) {
       console.log(error);
     }
@@ -330,7 +292,7 @@ export default function Todolist() {
       }
     }
     getData();
-  }, [user?.uid, monthKey, month, targetMonth , year]);
+  }, [setTodosCache, todosCache, user?.uid, monthKey, month, targetMonth, year]);
 
  // console.log("Todos Cache:", todosCache); // ตรวจสอบค่า todosCache ใน console
   
@@ -397,8 +359,10 @@ export default function Todolist() {
               </label>
             </div>
             <ColorPicker
-              selectedColor={selectedColor}
-              onColorChange={setSelectedColor}
+              value={selectedColor}
+              onChange={setSelectedColor}
+              textValue={selectedTextColor}
+              onTextChange={setSelectedTextColor}
             />
             <div className={css("formActions")}>
               <button
@@ -410,6 +374,7 @@ export default function Todolist() {
                       name: todolist.name,
                       value: todolist.value,
                       color: selectedColor,
+                      textColor: selectedTextColor,
                     },
                     action: "Add",
                   })
@@ -419,12 +384,7 @@ export default function Todolist() {
               </button>
               <button
                 className={css("button", "secondary")}
-                onClick={() => {
-                  SetStatusmode(null);
-                  settodolist({});
-                  setSelectedColor("#ffffff");
-                  setEditingId(null);
-                }}
+                onClick={closeManageMode}
               >
                 Cancel
               </button>
@@ -436,7 +396,7 @@ export default function Todolist() {
               <>
                 <button
                   className={css("button", "primary")}
-                  onClick={() => SetStatusmode("Add")}
+                  onClick={startAddMode}
                 >
                   Add Task
                 </button>
@@ -456,11 +416,7 @@ export default function Todolist() {
             ) : (
               <button
                 className={css("button", "secondary")}
-                onClick={() => {
-                  SetStatusmode(null);
-                  setEditingId(null);
-                  settodolist({});
-                }}
+                onClick={closeManageMode}
               >
                 Exit Manage Mode
               </button>
@@ -508,8 +464,11 @@ export default function Todolist() {
                       />
                     </div>
                     <ColorPicker
-                      selectedColor={selectedColor}
-                      onColorChange={setSelectedColor}
+                      key={todo.id}
+                      value={selectedColor}
+                      onChange={setSelectedColor}
+                      textValue={selectedTextColor}
+                      onTextChange={setSelectedTextColor}
                     />
                     <div className={css("itemActions")}>
                       <button
@@ -522,6 +481,7 @@ export default function Todolist() {
                               name: todolist.name,
                               value: todolist.value,
                               color: selectedColor,
+                              textColor: selectedTextColor,
                             },
                             action: "Edit",
                           })
@@ -531,12 +491,7 @@ export default function Todolist() {
                       </button>
                       <button
                         className={css("button", "secondary")}
-                        onClick={() => {
-                          SetStatusmode(null);
-                          settodolist({});
-                          setSelectedColor("#ffffff");
-                          setEditingId(null);
-                        }}
+                        onClick={closeManageMode}
                       >
                         Cancel
                       </button>
@@ -544,7 +499,12 @@ export default function Todolist() {
                   </div>
                 ) : (
                   <div className={css("content")}>
-                    <h3 className={css("itemTitle")}>{todo.name}</h3>
+                    <h3
+                      className={css("itemTitle")}
+                      style={{ color: resolveTextColor(todo.color, todo.textColor) }}
+                    >
+                      {todo.name}
+                    </h3>
                     <p className={css("itemText")}>{todo.value}</p>
                   </div>
                 )}

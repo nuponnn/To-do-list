@@ -30,6 +30,9 @@ const db = initializeFirestore(app, {
   cache: persistentLocalCache({
     tabManager: persistentMultipleTabManager(), // ✅ แก้ปัญหา multi-tab ได้เลย
   }),
+  // color/textColor เป็น optional และ "ไม่มีสี" แทนด้วย undefined
+  // ถ้าไม่ตั้งค่านี้ Firestore จะ throw เมื่อเจอค่า undefined
+  ignoreUndefinedProperties: true,
 });
 
 if (typeof window !== "undefined") {

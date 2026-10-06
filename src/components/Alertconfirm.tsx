@@ -2,6 +2,7 @@ import React from "react";
 // import type {  Todolist } from "../components/services";
 import "../assets/css/Alertconfirm.css";
 import { type Todolist } from "./services";
+import { DEFAULT_TEXT_COLOR } from "../constants/color";
 
 interface Props {
   DataOpenAlert: {
@@ -38,12 +39,18 @@ export default function Alertconfirm({
   const hasValueChanged =
     Item?.value !== undefined && Item?.value !== OldData?.value;
 
-  const hasColorChanged =
-    Item?.color !== undefined && Item?.color !== OldData?.color;
-  const isEdited = hasNameChanged || hasValueChanged || hasColorChanged;
+  // เทียบตรงๆ ไม่ต้องกัน undefined เพราะการกด "ไม่มีสี" คือค่า undefined ซึ่งต้องนับว่าเปลี่ยน
+  const hasColorChanged = Item?.color !== OldData?.color;
+
+  const hasTextColorChanged = Item?.textColor !== OldData?.textColor;
+
+  const isEdited =
+    hasNameChanged || hasValueChanged || hasColorChanged || hasTextColorChanged;
+  const hasPendingStamps =
+    pendingStampslength !== undefined && pendingStampslength > 0;
   const isConfirmDisabled =
     (DataOpenAlert.action === "Edit" && !isEdited) ||
-    (DataOpenAlert.action === "Add" && !Item?.name);
+    (DataOpenAlert.action === "Add" && !Item?.name && !hasPendingStamps);
 
   if (Page == "Calendar")
     return (
@@ -157,14 +164,34 @@ export default function Alertconfirm({
                     <span
                       className="color-circle"
                       style={{
-                        backgroundColor: OldData?.color,
+                        backgroundColor: OldData?.color ?? "#ffffff",
                       }}
                     />
                     →
                     <span
                       className="color-circle"
                       style={{
-                        backgroundColor: Item?.color,
+                        backgroundColor: Item?.color ?? "#ffffff",
+                      }}
+                    />
+                  </p>
+                )}
+                {hasTextColorChanged && (
+                  <p>
+                    Text color:
+                    <span
+                      className="color-circle"
+                      style={{
+                        backgroundColor:
+                          OldData?.textColor ?? DEFAULT_TEXT_COLOR,
+                      }}
+                    />
+                    →
+                    <span
+                      className="color-circle"
+                      style={{
+                        backgroundColor:
+                          Item?.textColor ?? DEFAULT_TEXT_COLOR,
                       }}
                     />
                   </p>
