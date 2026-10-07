@@ -20,7 +20,7 @@ export interface ColorPickerProps {
 
 // <input type="color"> บังคับให้มีค่าเสมอ และรับได้แค่ 6 หลัก
 // ถ้ายังไม่เคยเลือกสี ใช้สีเทาอ่อนเป็นค่าเริ่มต้นเพื่อไม่ให้กรอบสีขาวกลืนกับพื้นหลัง
-const FALLBACK_SWATCH = "#94a3b8";
+const FALLBACK_SWATCH = "#ffffff";
 
 export default function ColorPicker({
   value,

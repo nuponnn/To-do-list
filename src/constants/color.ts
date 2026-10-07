@@ -46,7 +46,7 @@ export const hasRealColor = (color?: string) => toTagColor(color) !== undefined;
 
 // ---------- text color บนพื้นหลังสี ----------
 
-export const DEFAULT_TEXT_COLOR = "#1e293b";
+export const DEFAULT_TEXT_COLOR = "#0f172a";
 export const INVERT_TEXT_COLOR = "#ffffff";
 
 // สูตร relative luminance ของ WCAG ใช้ตัดสินว่าพื้นสีสว่างหรือเข้ม
