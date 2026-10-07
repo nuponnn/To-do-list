@@ -396,9 +396,13 @@ export default function Calendar() {
           const dayKey = currentDate.date(day).format("YYYY-MM-DD");
           // ดึง List ของเดือนปัจจุบันออกมา ถ้ายังไม่มีให้เป็น Array ว่าง
           const todosForDay = todosCache[monthKey]?.[dayKey] || [];
-          const sortedTodosForDay = [...todosForDay].sort(
-            (a, b) => Number(hasRealColor(b.color)) - Number(hasRealColor(a.color)),
-          );
+          const sortedTodosForDay = [...todosForDay].sort((a, b) => {
+            // task ที่เสร็จแล้วดันลงท้ายเสมอ แล้วจึงให้ task ที่มีสีจริงอยู่บน
+            const completePriority =
+              Number(a.complete) - Number(b.complete);
+            if (completePriority !== 0) return completePriority;
+            return Number(hasRealColor(b.color)) - Number(hasRealColor(a.color));
+          });
           const currentPendingForDay = pendingStamps.filter(
             (item) => item.dateKey === dayKey,
           );
@@ -409,12 +413,7 @@ export default function Calendar() {
               className={`day-container ${activeQuickId ? "quick-stamp-mode" : ""}`}
             >
               <div
-                style={
-                  isCurrentMonth && day === todayDate
-                    ? { backgroundColor: "lightblue" }
-                    : {}
-                }
-                className="day"
+                className={`day ${isCurrentMonth && day === todayDate ? "is-today" : ""}`}
               >
                 {day}
               </div>
@@ -427,7 +426,7 @@ export default function Calendar() {
                       background: todo?.color ?? "#fff8f8",
                       color: resolveTextColor(todo?.color, todo?.textColor),
                     }}
-                    className="todolist-content"
+                    className={`todolist-content ${todo?.complete ? "is-done" : ""}`}
                   >
                     {todo?.name}
                   </div>
@@ -439,10 +438,8 @@ export default function Calendar() {
                   style={{
                     background: pItem.color ?? "#ffffff",
                     color: resolveTextColor(pItem.color, pItem.textColor),
-                    opacity: 0.6, // ทำให้จางลงเล็กน้อย
-                    border: "1px dashed #000", // ใส่เส้นประ
                   }}
-                  className="todolist-content"
+                  className="todolist-content pending-stamp"
                 >
                   {pItem.name}
                 </div>
@@ -482,30 +479,32 @@ export default function Calendar() {
           />
         )}
 
-        <div className="year">{year}</div>
-        <div className="month-slider-view">
-          {/* ใส่คลาส transition-active เมื่ออยู่ในช่วงกำลังเลื่อนเท่านั้น */}
-          <div
-            className={`slider-track ${direction} ${isTransitioning ? "transition-active" : ""}`}
-          >
-            {displayedMonths.map((month, index) => {
-              // ดัชนีที่ 2 คือเดือนปัจจุบัน (ตัวกลางจาก 5 ตัว)
-              const isActive = index === 2;
+        <div className="cal-head">
+          <div className="year">{year}</div>
+          <div className="month-slider-view">
+            {/* ใส่คลาส transition-active เมื่ออยู่ในช่วงกำลังเลื่อนเท่านั้น */}
+            <div
+              className={`slider-track ${direction} ${isTransitioning ? "transition-active" : ""}`}
+            >
+              {displayedMonths.map((month, index) => {
+                // ดัชนีที่ 2 คือเดือนปัจจุบัน (ตัวกลางจาก 5 ตัว)
+                const isActive = index === 2;
 
-              return (
-                <button
-                  key={month.format("YYYY-MM")}
-                  className={`slider-item ${isActive ? "active" : "side"}`}
-                  onClick={() => {
-                    if (index < 2) prevMonth();
-                    if (index > 2) nextMonth();
-                  }}
-                  disabled={isTransitioning}
-                >
-                  {month.format("MMMM")}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={month.format("YYYY-MM")}
+                    className={`slider-item ${isActive ? "active" : "side"}`}
+                    onClick={() => {
+                      if (index < 2) prevMonth();
+                      if (index > 2) nextMonth();
+                    }}
+                    disabled={isTransitioning}
+                  >
+                    {month.format("MMMM")}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
         {calendar}
@@ -527,7 +526,7 @@ export default function Calendar() {
           </div>
           <div className="quick-todo-inputs">
             <div>
-              <h2>Create New Task</h2>
+              <h2 className="quick-todo-title">Create New Task</h2>
               <input
                 type="text"
                 placeholder="e.g., Homework"
@@ -538,7 +537,7 @@ export default function Calendar() {
                 onKeyDown={(e) => e.key === "Enter" && openQuickTodoConfirm()}
                 className="quick-input"
               />
-              <div>Description</div>
+              <div className="quick-field-label">Description</div>
               <input
                 type="text"
                 placeholder="e.g., Meeting"
@@ -613,31 +612,34 @@ export default function Calendar() {
               })}
             </div>
           ) : (
-            <div className="quick-todo-list">No quick todos available</div>
+            <div className="quick-todo-list quick-todo-empty">
+              No quick todos available
+            </div>
           )}
           {pendingStamps.length > 0 && (
             <div className="quick-pending-bar">
-              <span>
-                เลือกไว้ทั้งหมด <strong>{pendingStamps.length}</strong> รายการ:
-                <div>
-                  {/* 🟢 แก้ไข: ปุ่ม Undo (ย้อนกลับ) */}
+              <div className="quick-pending-info">
+                <span>
+                  เลือกไว้ทั้งหมด <strong>{pendingStamps.length}</strong>{" "}
+                  รายการ:
+                </span>
+                <div className="quick-history">
                   <button
-                    className="prev-item"
+                    className="quick-history-btn"
                     onClick={handleUndo}
                     disabled={pendingStamps.length === 0}
                   >
                     Undo
                   </button>
-                  {/* 🟢 แก้ไข: ปุ่ม Redo (ทำซ้ำ/ยกเลิกย้อนกลับ) */}
                   <button
-                    className="prev-item"
+                    className="quick-history-btn"
                     onClick={handleRedo}
                     disabled={redoHistory.length === 0}
                   >
                     Redo
                   </button>
                 </div>
-              </span>
+              </div>
               <div className="quick-actions">
                 <button className="btn-cancel" onClick={resetCalendarComposer}>
                   Cancel

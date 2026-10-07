@@ -1,156 +1,196 @@
-/* --- Global Reset & Theme Setup --- */
-
-
-/* --- Auth Card Container --- */
+/* --- Auth bento: brand tile + form tile --- */
 .auth-container {
-  background-color: #ffffff; /* ขาวนวลสะอาดตา */
-  padding: 2.5rem 2rem;
-  border-radius: 16px; /* ขอบมนระดับเดียวกับตัว Calendar */
   width: 100%;
   max-width: 600px;
   min-width: 0;
- 
-
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); /* เงาซอฟต์ดึงมาจากตัวปฏิทิน */
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  animation: cardFadeIn 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  display: grid;
+  gap: 14px;
+  animation: cardFadeIn 320ms var(--ease);
 }
 
-/* หัวข้อ Sign In / Sign Up */
-.auth-container h1 {
-  font-size: 1.5rem;
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.auth-brand,
+.auth-panel {
+  background-color: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.auth-brand {
+  display: none;
+  padding: 24px 24px 22px;
+}
+
+.auth-brand-title {
+  margin: 0 0 10px;
+  font-size: 1.75rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.auth-brand-note {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 46ch;
+}
+
+.auth-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 2.25rem 2rem;
+}
+
+.auth-panel-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--ink);
   text-align: center;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
 }
 
 /* --- Form & Layout --- */
-.auth-form{
+.auth-form {
   display: flex;
   flex-direction: column;
-  gap: 12px; /* รักษาระยะห่างให้ดูไม่หนาแน่นจนเกินไป */
+  gap: 12px;
 }
 
-.auth-form div {
+.auth-form > div {
   width: 100%;
 }
-.button-auth{
-  padding: 8px;
-  background-color: #f8fafc; /* เปลี่ยนพื้นหลังกล่องวันเป็นเทาอ่อนมากๆ */
-  border: 1px solid #f1f5f9; /* เส้นขอบจางลง */
-  border-radius: 8px;
+
+.button-auth {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px;
+  background-color: var(--ink);
+  border: 1px solid var(--ink);
+  color: #ffffff;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color var(--t-fast) var(--ease),
+    transform var(--t-fast) var(--ease);
 }
-.button-auth:hover {
-  background-color: #ffffff;
-  border-color: #cbd5e1;
-  scale: 1.05; /* เพิ่มเอฟเฟกต์ขยายเล็กน้อยเพื่อให้ดูมีชีวิตชีวาขึ้น */
+
+.button-auth:hover:not(:disabled) {
+  background-color: var(--ink-soft);
 }
-.switch-mode-button{
+
+.button-auth:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.auth-loading {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.switch-mode-button {
   background: none;
   border: none;
-  color: #3b82f6; /* สีฟ้าพรีเมียมตามสีปุ่มหลัก */
+  color: var(--accent);
   cursor: pointer;
   font-size: 0.875rem;
+  font-weight: 500;
   padding: 0;
   align-self: center;
- 
+  transition: color var(--t-fast) var(--ease);
 }
 
-/* จัดกลุ่ม Input และ Label ให้อยู่ด้วยกันในระนาบ Position: relative */
+.switch-mode-button:hover {
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Label + Input จัดเป็นคอลัมน์ ไม่วางทับกัน */
 .auth-form .input-group {
-  position: relative;
-  margin-bottom: 14px; /* เพิ่มระยะห่างด้านล่างเล็กน้อยกันตัวหนังสือลอยไปชนกัน */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   width: 100%;
 }
 
-/* ซ่อนข้อความ placeholder ดั้งเดิมด้วยสีโปร่งใส */
-.auth-form input::placeholder {
-  color: transparent !important;
-  opacity: 0 !important; /* ป้องกันบางเบราว์เซอร์ดื้อ */
+.auth-form .input-group label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink-soft);
+  cursor: pointer;
 }
 
-/* สำหรับเบราว์เซอร์ Edge / IE เก่า */
-.auth-form input::-ms-input-placeholder {
-  color: transparent !important;
-}
-
-/* สไตล์กล่อง Input ที่ปรับปรุงพื้นหลังและขอบเล็กน้อย */
 .auth-form .input-group input[type="text"],
 .auth-form .input-group input[type="password"] {
   width: 100%;
-  padding: 12px 14px; /* เผื่อพื้นที่ด้านบนและด้านล่างให้สมดุล */
+  padding: 12px 14px;
   font-size: 14px;
-  color: #1e293b;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0; /* ปรับขอบเข้มขึ้นนิดนึงเพื่อให้เวลาข้อความทับแล้วดูมีมิติ */
-  border-radius: 8px;
-  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  color: var(--ink);
+  background-color: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  transition:
+    border-color var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease);
 }
 
-/* จัดวาง Label เริ่มต้นให้ทับอยู่ตรงตำแหน่ง Placeholder เดิม */
-.auth-form .input-group label {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 14px;
-  color: #94a3b8; /* สีเทาอ่อนซอฟต์ตามธีมเดิมของคุณ */
-  padding: 0 4px;
-  background-color: transparent; /* เริ่มต้นเป็นโปร่งแสง */
-  pointer-events: none; /* เพื่อให้สามารถคลิกทะลุตัวหนังสือลงไปที่ Input ได้ */
-  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1); /* แอนิเมชันตอนเลื่อนขึ้นแบบนุ่มๆ */
-}
-
-/* --- จังหวะสำคัญ: เมื่อคลิกพิมพ์ (Focus) หรือเมื่อมีข้อความพิมพ์อยู่ (Not Placeholder Shown) --- */
-.auth-form .input-group input:focus ~ label,
-.auth-form .input-group input:not(:placeholder-shown) ~ label{
-  top: 0; /* เลื่อนขึ้นไปด้านบนสุดของกรอบอินพุต */
-  font-size: 11px; /* ย่อขนาดตัวหนังสือลงให้ดูเรียบร้อยเป็นระเบียบ */
-  font-weight: 600;
-  color: #3b82f6; /* เปลี่ยนเป็นสีฟ้าพรีเมียมตามสีปุ่มหลักเมื่อมีการโฟกัส */
-  background-color: #ffffff; /* ใส่พื้นหลังสีขาวเพื่อตัดเส้นขอบของ Input ให้ขาดออกจากกัน */
-}
-
-/* ถ้าอินพุตไม่ได้โฟกัสแต่มีข้อความข้างในอยู่ ให้รักษาสีเทาสุภาพไว้ ไม่ให้แย่งสายตา */
-.auth-form .input-group input:not(:placeholder-shown):not(:focus) ~ label {
-  color: #64748b;
-}
-
-/* เมื่อคลิกอินพุต ให้เส้นขอบเปลี่ยนเป็นสีเข้มหรือสีฟ้าพรีเมียม */
 .auth-form .input-group input:focus {
   outline: none;
-  background-color: #ffffff;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08); /* เพิ่มเงาสะท้อนออร่าฟ้าจางๆ */
+  background-color: var(--surface);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+.auth-form .input-group input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: none;
 }
 
 /* --- Error Box (กล่องแจ้งเตือนความผิดพลาด) --- */
 .error-box {
   font-size: 12px;
-  color: #ef4444; /* แดงสว่างระดับโมเดิร์นคัต */
-  background-color: #fef2f2;
-  border-left: 3px solid #ef4444; /* เพิ่มกิมมิคเส้นคลาสสิกเตอร์ฝั่งซ้ายแบบ todolist-content */
+  line-height: 1.5;
+  color: #b91c1c;
+  background-color: var(--danger-soft);
+  border: 1px solid #fecaca;
   padding: 8px 12px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   text-align: left;
   font-weight: 500;
 }
 
 /* Responsive: auth page - tested targets 320, 480, 720, 1200px */
 @media (max-width: 359px) {
-  .auth-container {
-    width: 100%;
-    max-width: 100%;
+  .auth-panel {
     padding: 1.25rem 1rem;
-    border-radius: 12px;
     gap: 1rem;
+    border-radius: var(--r-sm);
   }
 
-  .auth-container h1 {
-    font-size: 1.25rem;
+  .auth-panel-title {
+    font-size: 1.15rem;
   }
 
   .auth-form {
@@ -167,10 +207,6 @@
     font-size: 13px;
   }
 
-  .button-auth {
-    width: 100%;
-  }
-
   .switch-mode-button {
     line-height: 1.35;
   }
@@ -179,24 +215,44 @@
 @media (min-width: 360px) and (max-width: 599px) {
   .auth-container {
     width: min(100%, 420px);
-    padding: 1.75rem 1.25rem;
-    border-radius: 14px;
   }
 
-  .button-auth {
-    width: 100%;
+  .auth-panel {
+    padding: 1.75rem 1.25rem;
   }
 }
 
 @media (min-width: 600px) and (max-width: 899px) {
   .auth-container {
     width: min(100%, 520px);
-    padding: 2.25rem 1.75rem;
+  }
+
+  .auth-panel {
+    padding: 2rem 1.75rem;
+  }
+
+  .auth-brand {
+    display: block;
+    padding: 20px 1.75rem;
   }
 }
 
 @media (min-width: 900px) {
   .auth-container {
-    width: min(100%, 600px);
+    width: min(100%, 900px);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    grid-template-areas: "brand panel";
+  }
+
+  .auth-brand {
+    grid-area: brand;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 2.25rem 2rem;
+  }
+
+  .auth-panel {
+    grid-area: panel;
   }
 }

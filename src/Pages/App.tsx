@@ -143,46 +143,54 @@ export default function App() {
   return (
     <>
       <section className="auth-container">
-        <h1>{authState.Mode === "signin" ? "Sign In" : "Sign Up"}</h1>
-        <form onSubmit={submitHandler} className="auth-form">
-          <div className="input-group">
-            <input
-              type="text"
-              placeholder="email"
-              value={authState.email}
-              onChange={(e) =>
-                dispatch({
-                  type: "SET_FIELD",
-                  field: "email",
-                  value: e.target.value,
-                })
-              }
-              id="email"
-            />
-            <label htmlFor="email">Email</label>
-          </div>
-          <div className="input-group">
-            <input
-              type="password"
-              placeholder="password"
-              value={authState.password}
-              onChange={(e) =>
-                dispatch({
-                  type: "SET_FIELD",
-                  field: "password",
-                  value: e.target.value,
-                })
-              }
-              id="password"
-            />
-            <label htmlFor="password">Password</label>
-          </div>
-          <div className="input-group">
+        <aside className="auth-brand">
+          <h1 className="auth-brand-title">To Do List</h1>
+          <p className="auth-brand-note">
+            Capture a task once as a reusable template, stamp it onto any day
+            of the calendar, and follow it to completion by color.
+          </p>
+        </aside>
+
+        <div className="auth-panel">
+          <h2 className="auth-panel-title">
+            {authState.Mode === "signin" ? "Sign In" : "Sign Up"}
+          </h2>
+          <form onSubmit={submitHandler} className="auth-form">
+            <div className="input-group">
+              <label htmlFor="email">Email</label>
+              <input
+                type="text"
+                value={authState.email}
+                onChange={(e) =>
+                  dispatch({
+                    type: "SET_FIELD",
+                    field: "email",
+                    value: e.target.value,
+                  })
+                }
+                id="email"
+              />
+            </div>
+            <div className="input-group">
+              <label htmlFor="password">Password</label>
+              <input
+                type="password"
+                value={authState.password}
+                onChange={(e) =>
+                  dispatch({
+                    type: "SET_FIELD",
+                    field: "password",
+                    value: e.target.value,
+                  })
+                }
+                id="password"
+              />
+            </div>
             {authState.Mode === "signup" && (
-              <>
+              <div className="input-group">
+                <label htmlFor="confirmPassword">Confirm Password</label>
                 <input
                   type="password"
-                  placeholder="Confirm Password"
                   value={authState.confirmPassword}
                   onChange={(e) =>
                     dispatch({
@@ -193,37 +201,32 @@ export default function App() {
                   }
                   id="confirmPassword"
                 />
-                <label htmlFor="confirmPassword">Confirm Password</label>
-              </>
+              </div>
             )}
-          </div>
-          {authState.error && (
-            <div className="error-box">{authState.error}</div>
-          )}
-          {authState.isLoading ? (
-            "Loading..."
-          ) : (
-            <>
-              <button type="submit" className="submit-button button-auth">
-                {authState.Mode !== "signin" ? " Sign Up" : "Sign In"}
-              </button>
+            {authState.error && (
+              <div className="error-box">{authState.error}</div>
+            )}
+            {authState.isLoading ? (
+              <p className="auth-loading">Loading...</p>
+            ) : (
+              <>
+                <button type="submit" className="submit-button button-auth">
+                  {authState.Mode !== "signin" ? " Sign Up" : "Sign In"}
+                </button>
 
-              {authState.isLoading ? (
-                "Loading..."
-              ) : (
                 <button
                   type="button"
                   onClick={() => dispatch({ type: "SWITCH_MODE" })}
-                  className="switch-mode-button "
+                  className="switch-mode-button"
                 >
                   {authState.Mode === "signin"
                     ? "Don't have an account? Sign Up"
                     : "Already have an account?Sign In"}
                 </button>
-              )}
-            </>
-          )}
-        </form>
+              </>
+            )}
+          </form>
+        </div>
       </section>
 
       {/* ********************************************** */}

@@ -4,7 +4,7 @@
 }
 
 .cp-label {
-  color: #475569;
+  color: var(--ink-soft);
   font-size: 13px;
   font-weight: 600;
 }
@@ -22,10 +22,31 @@
   border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: 50%;
   cursor: pointer;
+  padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+  transition:
+    transform var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
+}
+
+.cp-dot:hover {
+  transform: scale(1.1);
+}
+
+.cp-dot:active {
+  transform: scale(0.94);
+}
+
+.cp-dot:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .cp-dot-active {
-  border-color: #334155;
+  border-color: var(--surface);
+  box-shadow:
+    inset 0 0 0 1px rgba(15, 23, 42, 0.12),
+    0 0 0 2px var(--ink);
 }
 
 /* ปุ่ม native color picker ต้องซ่อน input ทิ้งแล้ววาดเป็นวงกลมเหมือน dot ตัวอื่น */
@@ -36,7 +57,6 @@
   height: 26px;
   border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: 50%;
-  overflow: hidden;
   cursor: pointer;
   box-shadow: inset 0 0 0 1px #cbd5e1;
 }
@@ -45,15 +65,30 @@
   box-shadow: inset 0 0 0 1px #94a3b8;
 }
 
+.cp-native:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .cp-native input {
   position: absolute;
-  inset: -6px;
-  width: calc(100% + 12px);
-  height: calc(100% + 12px);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   padding: 0;
   border: none;
   background: none;
   cursor: pointer;
+  border-radius: 50%;
+}
+
+.cp-native input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.cp-native input::-webkit-color-swatch {
+  border: none;
+  border-radius: 50%;
 }
 
 .cp-text-row {
@@ -67,25 +102,38 @@
 }
 
 .cp-auto-btn {
-  padding: 4px 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: #ffffff;
-  color: #475569;
+  padding: 5px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink-soft);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.18s ease, border-color 0.18s ease;
+  transition:
+    background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease),
+    transform var(--t-fast) var(--ease);
 }
 
 .cp-auto-btn:hover {
-  background: #f8fafc;
-  border-color: #94a3b8;
+  background: var(--surface-sunken);
+  border-color: var(--faint);
+}
+
+.cp-auto-btn:active {
+  transform: translateY(1px);
+}
+
+.cp-auto-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .cp-auto-btn.active {
-  border-color: #334155;
-  color: #1e293b;
+  border-color: var(--ink);
+  color: var(--ink);
   font-weight: 600;
 }
 
@@ -103,28 +151,43 @@
 }
 
 .cp-dot-none.cp-dot-active {
-  border-color: #334155;
+  border-color: var(--surface);
 }
 
 .cp-save-btn {
-  padding: 4px 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: #ffffff;
-  color: #475569;
+  padding: 5px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink-soft);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.18s ease, border-color 0.18s ease;
+  transition:
+    background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease),
+    transform var(--t-fast) var(--ease);
 }
 
 .cp-save-btn:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #94a3b8;
+  background: var(--surface-sunken);
+  border-color: var(--faint);
+}
+
+.cp-save-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.cp-save-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .cp-save-btn:disabled {
-  opacity: 0.45;
+  background: var(--surface-sunken);
+  border-color: var(--line);
+  color: var(--muted);
   cursor: not-allowed;
 }
 
@@ -148,11 +211,31 @@
   border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: 50%;
   cursor: pointer;
+  padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+  transition:
+    transform var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
+}
+
+.cp-saved-dot:hover {
+  transform: scale(1.1);
+}
+
+.cp-saved-dot:active {
+  transform: scale(0.94);
+}
+
+.cp-saved-dot:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .cp-saved-item.active .cp-saved-dot {
-  border-color: #334155;
-  box-shadow: 0 0 0 2px rgba(51, 65, 85, 0.18);
+  border-color: var(--surface);
+  box-shadow:
+    inset 0 0 0 1px rgba(15, 23, 42, 0.12),
+    0 0 0 2px var(--ink);
 }
 
 .cp-saved-del {

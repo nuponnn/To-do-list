@@ -1,11 +1,18 @@
-import { useState, useEffect, useMemo } from "react";
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  type CSSProperties,
+} from "react";
 import { AuthContext } from "../Context/AuthPreventContext";
 
 import { useParams, useNavigate } from "react-router-dom";
 import { services } from "../components/services";
 import Alertconfirm from "../components/Alertconfirm";
 import ColorPicker from "../components/ColorPicker";
-import { hasRealColor, resolveTextColor, type TagColor } from "../constants/color";
+import { hasRealColor, DEFAULT_TEXT_COLOR, type TagColor } from "../constants/color";
 import { useTodo } from "../Context/TodoProvider";
 import dayjs from "dayjs";
 import styles from "../assets/css/Todolist.module.css";
@@ -16,6 +23,8 @@ const css = (...classNames: Array<string | false | null | undefined>) =>
     .filter(Boolean)
     .map((className) => styles[className as string] || className)
     .join(" ");
+
+let lastSeenDay: string | null = null;
 
 export default function Todolist() {
   const { user, loading } = AuthContext();
@@ -52,6 +61,28 @@ export default function Todolist() {
   const year = dayjs(activeDay).format("YYYY");
   const month = dayjs(activeDay).format("MM");
   const monthKey = dayjs(activeDay).format("YYYY-MM");
+
+  const sliderDates = useMemo(
+    () =>
+      [-2, -1, 0, 1, 2].map((offset) =>
+        dayjs(activeDay).add(offset, "day").format("YYYY-MM-DD"),
+      ),
+    [activeDay],
+  );
+
+  const dayTransitionMs = 300;
+  const [trackDirection, setTrackDirection] = useState<"next" | "prev" | "">("");
+  const [isDayTransitioning, setIsDayTransitioning] = useState(false);
+  const listSwapRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = listSwapRef.current;
+    const prevDay = lastSeenDay;
+    lastSeenDay = activeDay;
+    if (!el || !prevDay || prevDay === activeDay) return;
+    const forward = dayjs(activeDay).isAfter(prevDay, "day");
+    el.classList.add(styles[forward ? "listSwapNext" : "listSwapPrev"]);
+  }, [activeDay]);
 
   const resetTaskForm = () => {
     settodolist({});
@@ -252,14 +283,29 @@ export default function Todolist() {
     settodolist((prav) => ({ ...prav, [name]: value }));
   }
   //-----------------Next Day ------------------
+  function goToDay(step: 1 | -1) {
+    if (isDayTransitioning) return;
+    const direction = step === 1 ? "next" : "prev";
+    const targetDay = dayjs(activeDay).add(step, "day").format("YYYY-MM-DD");
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    setTrackDirection(direction);
+    setIsDayTransitioning(true);
+
+    window.setTimeout(
+      () => navigate(`/to-do-list/${targetDay}`),
+      reduceMotion ? 0 : dayTransitionMs,
+    );
+  }
+
   function handleNextDay() {
-    const nextDate = dayjs(activeDay).add(1, "day").format("YYYY-MM-DD");
-    navigate(`/to-do-list/${nextDate}`);
+    goToDay(1);
   }
   //-----------------Prev Day ------------------
   function handlePrevDay() {
-    const prevDate = dayjs(activeDay).subtract(1, "day").format("YYYY-MM-DD");
-    navigate(`/to-do-list/${prevDate}`);
+    goToDay(-1);
   }
   //-----------------useEffect ------------------
 
@@ -321,13 +367,56 @@ export default function Todolist() {
             <p className={css("meta")}>{user?.email}</p>
           </div>
           <div className={css("daycontrol")}>
-            <button className="prev-day" onClick={handlePrevDay}>
-              &lt;
-            </button>
-            <span className={css("dateBadge")}>{activeDay}</span>
-            <button className="next-day" onClick={handleNextDay}>
-              &gt;
-            </button>
+            <div
+              className={css("daySliderView")}
+              role="group"
+              aria-label="Change date"
+            >
+              <div
+                className={css(
+                  "sliderTrack",
+                  isDayTransitioning && trackDirection === "next" && "dirNext",
+                  isDayTransitioning && trackDirection === "prev" && "dirPrev",
+                  isDayTransitioning && "transitionActive",
+                )}
+              >
+                {sliderDates.map((dateStr, index) => {
+                  if (index === 0 || index === 4) {
+                    return (
+                      <span
+                        key={dateStr}
+                        className={css("daySliderItem")}
+                        aria-hidden="true"
+                      >
+                        {dateStr}
+                      </span>
+                    );
+                  }
+                  if (index === 2) {
+                    return (
+                      <span
+                        key={dateStr}
+                        className={css("daySliderItem", "active")}
+                        aria-current="date"
+                      >
+                        {dateStr}
+                      </span>
+                    );
+                  }
+                  return (
+                    <button
+                      key={dateStr}
+                      type="button"
+                      className={css("daySliderItem", "daySliderBtn")}
+                      onClick={index === 1 ? handlePrevDay : handleNextDay}
+                      disabled={isDayTransitioning}
+                    >
+                      {dateStr}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </header>
 
@@ -391,163 +480,173 @@ export default function Todolist() {
             </div>
           </section>
         ) : (
-          <div className={css("toolbar")}>
-            {Statusmode === null ? (
-              <>
-                <button
-                  className={css("button", "primary")}
-                  onClick={startAddMode}
-                >
-                  Add Task
-                </button>
+          <section className={css("toolTile")}>
+            <div className={css("toolbar")}>
+              {Statusmode === null ? (
+                <>
+                  <button
+                    className={css("button", "primary")}
+                    onClick={startAddMode}
+                  >
+                    Add Task
+                  </button>
+                  <button
+                    className={css("button", "secondary")}
+                    onClick={() => SetStatusmode("Edit")}
+                  >
+                    Edit Task
+                  </button>
+                  <button
+                    className={css("button", "danger")}
+                    onClick={() => SetStatusmode("Delete")}
+                  >
+                    Delete Task
+                  </button>
+                </>
+              ) : (
                 <button
                   className={css("button", "secondary")}
-                  onClick={() => SetStatusmode("Edit")}
+                  onClick={closeManageMode}
                 >
-                  Edit Task
+                  Exit Manage Mode
                 </button>
-                <button
-                  className={css("button", "danger")}
-                  onClick={() => SetStatusmode("Delete")}
-                >
-                  Delete Task
-                </button>
-              </>
-            ) : (
-              <button
-                className={css("button", "secondary")}
-                onClick={closeManageMode}
-              >
-                Exit Manage Mode
-              </button>
-            )}
-          </div>
+              )}
+            </div>
+          </section>
         )}
 
         <section className={css("listShell")}>
-          <ul className={css("list")}>
-            {sortedTodolist.map((todo) => (
-              <li
-                key={todo.id}
-                className={css("item", todo.complete && "done")}
-                style={{ borderLeft: `4px solid ${todo.color || "#e5e7eb"}` }}
-              >
-                <input
-                  type="checkbox"
-                  className={css("checkbox")}
-                  checked={todo.complete}
-                  onChange={() => toggleComplete(todo.id, todo.complete)}
-                />
+          <div key={activeDay} ref={listSwapRef}>
+            <ul className={css("list")}>
+              {sortedTodolist.map((todo) => (
+                <li
+                  key={todo.id}
+                  className={css("item", todo.complete && "done")}
+                  style={
+                    { "--tag": todo.color ?? "transparent" } as CSSProperties
+                  }
+                >
+                  <input
+                    type="checkbox"
+                    className={css("checkbox")}
+                    checked={todo.complete}
+                    onChange={() => toggleComplete(todo.id, todo.complete)}
+                  />
 
-                {Statusmode === "Edit" &&
-                !todo.complete &&
-                editingId === todo.id ? (
-                  <div className={css("editBox")}>
-                    <div className={css("editFields")}>
-                      <input
-                        className={css("input")}
-                        type="text"
-                        name="name"
-                        value={todolist.name ?? editOldDataInput.name ?? ""}
-                        key={`edit-name-${editingId}`}
-                        placeholder="Edit title"
-                        onChange={handleChange}
+                  {Statusmode === "Edit" &&
+                  !todo.complete &&
+                  editingId === todo.id ? (
+                    <div className={css("editBox")}>
+                      <div className={css("editFields")}>
+                        <input
+                          className={css("input")}
+                          type="text"
+                          name="name"
+                          value={todolist.name ?? editOldDataInput.name ?? ""}
+                          key={`edit-name-${editingId}`}
+                          placeholder="Edit title"
+                          onChange={handleChange}
+                        />
+                        <input
+                          className={css("input")}
+                          type="text"
+                          name="value"
+                          value={
+                            todolist.value ?? editOldDataInput.value ?? ""
+                          }
+                          key={`edit-value-${editingId}`}
+                          placeholder="Edit description"
+                          onChange={handleChange}
+                        />
+                      </div>
+                      <ColorPicker
+                        key={todo.id}
+                        value={selectedColor}
+                        onChange={setSelectedColor}
+                        textValue={selectedTextColor}
+                        onTextChange={setSelectedTextColor}
                       />
-                      <input
-                        className={css("input")}
-                        type="text"
-                        name="value"
-                        value={todolist.value ?? editOldDataInput.value ?? ""}
-                        key={`edit-value-${editingId}`}
-                        placeholder="Edit description"
-                        onChange={handleChange}
-                      />
+                      <div className={css("itemActions")}>
+                        <button
+                          className={css("button", "success")}
+                          onClick={() =>
+                            setAlert({
+                              isOpen: true,
+                              Item: {
+                                id: todo.id,
+                                name: todolist.name,
+                                value: todolist.value,
+                                color: selectedColor,
+                                textColor: selectedTextColor,
+                              },
+                              action: "Edit",
+                            })
+                          }
+                        >
+                          Save
+                        </button>
+                        <button
+                          className={css("button", "secondary")}
+                          onClick={closeManageMode}
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
-                    <ColorPicker
-                      key={todo.id}
-                      value={selectedColor}
-                      onChange={setSelectedColor}
-                      textValue={selectedTextColor}
-                      onTextChange={setSelectedTextColor}
-                    />
+                  ) : (
+                    <div className={css("content")}>
+                      <h3
+                        className={css("itemTitle")}
+                        style={{
+                          color: todo.textColor ?? DEFAULT_TEXT_COLOR,
+                        }}
+                      >
+                        {todo.name}
+                      </h3>
+                      <p className={css("itemText")}>{todo.value}</p>
+                    </div>
+                  )}
+
+                  {Statusmode === "Edit" &&
+                    !todo.complete &&
+                    editingId !== todo.id && (
+                      <div className={css("itemActions")}>
+                        <button
+                          className={css("button", "secondary")}
+                          onClick={() => handleStartEdit(todo)}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    )}
+
+                  {Statusmode === "Delete" && (
                     <div className={css("itemActions")}>
                       <button
-                        className={css("button", "success")}
-                        onClick={() =>
+                        className={css("button", "danger")}
+                        onClick={() => {
                           setAlert({
                             isOpen: true,
                             Item: {
                               id: todo.id,
-                              name: todolist.name,
-                              value: todolist.value,
-                              color: selectedColor,
-                              textColor: selectedTextColor,
+                              name: todo.name,
+                              value: todo.value,
                             },
-                            action: "Edit",
-                          })
-                        }
+                            action: "Delete",
+                          });
+                        }}
                       >
-                        Save
-                      </button>
-                      <button
-                        className={css("button", "secondary")}
-                        onClick={closeManageMode}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className={css("content")}>
-                    <h3
-                      className={css("itemTitle")}
-                      style={{ color: resolveTextColor(todo.color, todo.textColor) }}
-                    >
-                      {todo.name}
-                    </h3>
-                    <p className={css("itemText")}>{todo.value}</p>
-                  </div>
-                )}
-
-                {Statusmode === "Edit" &&
-                  !todo.complete &&
-                  editingId !== todo.id && (
-                    <div className={css("itemActions")}>
-                      <button
-                        className={css("button", "secondary")}
-                        onClick={() => handleStartEdit(todo)}
-                      >
-                        Edit
+                        Delete
                       </button>
                     </div>
                   )}
-
-                {Statusmode === "Delete" && (
-                  <div className={css("itemActions")}>
-                    <button
-                      className={css("button", "danger")}
-                      onClick={() => {
-                        setAlert({
-                          isOpen: true,
-                          Item: {
-                            id: todo.id,
-                            name: todo.name,
-                            value: todo.value,
-                          },
-                          action: "Delete",
-                        });
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-          {mydataTodolist.length === 0 && (
-            <p className={css("empty")}>No tasks available for today</p>
-          )}
+                </li>
+              ))}
+            </ul>
+            {mydataTodolist.length === 0 && (
+              <p className={css("empty")}>No tasks available for today</p>
+            )}
+          </div>
         </section>
       </section>
     </main>

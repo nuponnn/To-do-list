@@ -1,17 +1,60 @@
+/* ============================================================
+   DESIGN TOKENS — แก้ที่นี่ที่เดียว ทุกหน้าใช้ค่าจากตรงนี้
+   ============================================================ */
+:root {
+  --page-bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface-sunken: #f8fafc;
 
-/* --- Navbar Styling --- */
-* ,*::before,*::after{
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --line-soft: #f1f5f9;
+
+  --ink: #0f172a;
+  --ink-soft: #1e293b;
+  --muted: #64748b;
+  --faint: #94a3b8;
+
+  --accent: #2563eb;
+  --accent-ink: #1d4ed8;
+  --accent-soft: #eff6ff;
+
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+  --success: #059669;
+  --success-soft: #ecfdf5;
+
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  --shadow-1: 0 1px 2px rgba(15, 23, 42, 0.04),
+    0 12px 24px -18px rgba(15, 23, 42, 0.45);
+  --shadow-2: 0 2px 6px rgba(15, 23, 42, 0.05),
+    0 24px 48px -28px rgba(15, 23, 42, 0.5);
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --t-fast: 120ms;
+  --t-base: 180ms;
+}
+
+*,
+*::before,
+*::after {
   box-sizing: border-box !important;
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
 }
 
 body {
-  background-color: #f1f5f9; /* ดึงมาจากสีพื้นหลังสไลเดอร์เดือน ให้ความรู้สึกสบายตา */
-  color: #0f172a; /* ใช้สีตัวอักษรเข้มจัดตามจุดทีเลือกไฮไลท์หลัก */
+  background-color: var(--page-bg);
+  color: var(--ink);
   min-height: 100vh;
   padding: 20px;
+  caret-color: var(--accent);
 }
 
 /* สำคัญ: อย่าให้ body เป็น flex center ทั้งแอป เพราะหลัง login หน้า todolist จะถูก shrink ตาม content ตอนกด Add */
@@ -27,6 +70,42 @@ body {
   width: 100%;
 }
 
+/* Browser surfaces: selection, focus ring, scrollbar มาจาก palette เดียวกัน */
+::selection {
+  background-color: #dbeafe;
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--line-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: var(--r-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--faint);
+}
+
 .app-shell {
   width: 100%;
   min-height: calc(100vh - 40px);
@@ -35,63 +114,65 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+/* --- Navbar --- */
 .navbar {
   width: 100%;
-  background-color: #ffffff; /* ขาวนวลสะอาดตา */
-  border-bottom: 1px solid #e2e8f0; /* เส้นคั่นบางๆ ด้านล่าง */
-  padding: 0.75rem 1.5rem;
-  position: fixed; /* ตรึงไว้ด้านบนสุดของหน้าจอ */
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 0.7rem 1.5rem;
+  position: fixed;
   top: 0;
   left: 0;
   z-index: 1000;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* เงาจางๆ เพิ่มมิติ */
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .nav-container {
-  max-width: 1200px; /* ความกว้างสูงสุดให้พอดีสายตา */
+  max-width: 1200px;
   margin: 0 auto;
   display: flex;
-  justify-content: space-between; /* แยกฝั่งซ้าย-ขวาออกจากกัน */
+  justify-content: space-between;
   align-items: center;
+  gap: 1rem;
 }
 
-/* กลุ่มลิงก์เมนู */
 .nav-links {
   display: flex;
-  gap: 1.5rem; /* ระยะห่างระหว่างเมนู */
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background-color: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
 }
 
 .nav-item {
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
-  color: #64748b; /* สีเทาสุภาพ */
-  padding: 0.5rem 0.25rem;
-  transition: all 0.2s ease;
-  position: relative;
+  color: var(--muted);
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+  transition:
+    color var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
 }
 
 .nav-item:hover {
-  color: #3b82f6; /* เปลี่ยนเป็นสีฟ้าพรีเมียมเมื่อเมาส์ชี้ */
+  color: var(--ink-soft);
+  background-color: var(--surface);
 }
 
-/* เอฟเฟกต์ไฮไลท์หน้าปัจจุบัน */
 .nav-item.active {
-  color: #3b82f6;
+  background-color: var(--surface);
+  color: var(--ink);
   font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
-.nav-item.active::after {
-  content: "";
-  position: absolute;
-  bottom: -12px; /* ดึงเส้นลงมาชนขอบล่างของ navbar */
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background-color: #3b82f6; /* เส้นฟ้าขีดเส้นใต้เมนูที่เลือก */
-}
-
-/* กลุ่มฝั่งขวา (User & Logout) */
 .nav-actions {
   display: flex;
   align-items: center;
@@ -100,38 +181,40 @@ body {
 
 .user-email {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--muted);
 }
 
 .btn-logout {
-  background-color: #fff;
-  border: 1px solid #e2e8f0;
-  color: #64748b;
+  background-color: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
   padding: 0.5rem 1rem;
-  border-radius: 6px;
+  border-radius: var(--r-pill);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  transition:
+    background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease),
+    transform var(--t-fast) var(--ease);
 }
 
 .btn-logout:hover:not(:disabled) {
-  background-color: #fef2f2; /* เปลี่ยนเป็นสีแดงจางๆ ตอนจะกดออก */
-  border-color: #fee2e2;
-  color: #ef4444;
-  transform: translateY(-1px);
+  background-color: var(--danger-soft);
+  border-color: #fecaca;
+  color: var(--danger);
 }
 
-/* สไตล์ตอนที่ปุ่มปิดใช้งาน (ยังไม่ได้ล็อกอิน) */
+.btn-logout:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
 .btn-logout:disabled {
-  opacity: 0.5;
   cursor: not-allowed;
-  background-color: #f1f5f9;
-  color: #94a3b8;
+  background-color: var(--surface-sunken);
+  color: var(--muted);
 }
-
-/* 💡 ข้อแนะนำเพิ่มเติม: เนื่องจากตัว Navbar เป็นแบบ fixed (ตรึงด้านบน) 
-   ในแท็ก body หรือกล่องคอนเทนเนอร์หลักของหน้าต่างๆ ควรเพิ่ม padding-top: 70px; เพื่อไม่ให้เนื้อหาหลักโดนแถบเมนูบังครับ */
 
 /* Responsive: global shell/navbar - tested targets 320, 480, 720, 1200px */
 @media (max-width: 359px) {
@@ -150,12 +233,12 @@ body {
 
   .nav-container {
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.6rem;
   }
 
   .nav-links {
     flex-wrap: nowrap;
-    gap: 0.35rem 0.65rem;
+    gap: 2px;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
@@ -166,12 +249,8 @@ body {
   }
 
   .nav-item {
-    font-size: 0.9rem;
-    padding: 0.35rem 0;
-  }
-
-  .nav-item.active::after {
-    bottom: -8px;
+    font-size: 0.85rem;
+    padding: 0.3rem 0.55rem;
   }
 
   .nav-actions {
@@ -195,7 +274,7 @@ body {
   }
 }
 
-@media (min-width: 360px) and (max-width: 480px) {
+@media (min-width: 360px) and (max-width: 599px) {
   body {
     padding: 12px;
   }
@@ -215,7 +294,6 @@ body {
 
   .nav-links {
     flex-wrap: nowrap;
-    gap: 0.45rem 0.75rem;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
@@ -226,7 +304,8 @@ body {
   }
 
   .nav-item {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
+    padding: 0.35rem 0.7rem;
   }
 
   .nav-actions {
@@ -252,92 +331,30 @@ body {
   }
 }
 
-@media (min-width: 481px) and (max-width: 599px){
-  body {
-    padding: 12px;
-  }
-
-  #root,
-  .app-shell {
-    min-height: calc(100vh - 24px);
-  }
-
-  .navbar {
-    padding: 0.6rem 1rem;
-  }
-
-  .nav-container {
-    gap: 0.75rem;
-  }
-
-  .nav-links {
-    flex-wrap: nowrap;
-    gap: 0.5rem 0.85rem;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-  }
-
-  .nav-links::-webkit-scrollbar {
-    display: none;
-  }
-
-  .nav-item {
-    font-size: 0.78rem;
-  }
-
-  .nav-actions {
-    gap: 0.65rem;
-    flex-shrink: 0;
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .user-email {
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}
-@media (min-width: 450px) and (max-width: 599px){
-  body {
-    padding: 12px;
-  }
-
-  #root,
-  .app-shell {
-    min-height: calc(100vh - 24px);
-  }
-
-  .navbar {
-    padding: 0.6rem 1rem;
-  }
-
-  .nav-container {
-    gap: 0.75rem;
-  }
-
+@media (min-width: 450px) and (max-width: 599px) {
   .nav-links {
     flex-wrap: wrap;
-    gap: 0.6rem 1rem;
+    overflow: visible;
   }
 
   .nav-item {
     font-size: 0.85rem;
+    padding: 0.35rem 0.75rem;
   }
 
   .nav-actions {
+    flex-direction: row;
+    align-items: center;
     gap: 0.5rem;
   }
 
   .user-email {
     max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-align: left;
+    font-size: 0.8rem;
   }
 }
+
 @media (min-width: 600px) and (max-width: 899px) {
   body {
     padding: 16px;
@@ -358,5 +375,16 @@ body {
     max-width: 1200px;
   }
 }
-/*------------------------------------------------
-*/
+
+/* --- Motion: ทุก animation ต้องมีทางเลือกสำหรับ reduced motion --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}

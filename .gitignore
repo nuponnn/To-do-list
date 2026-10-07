@@ -28,3 +28,11 @@ firebase-debug.log
 *.njsproj
 *.sln
 *.sw?
+
+
+#ai
+.agents
+.codex
+.opencode
+
+.impeccable
