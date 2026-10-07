@@ -12,11 +12,18 @@ import { useParams, useNavigate } from "react-router-dom";
 import { services } from "../components/services";
 import Alertconfirm from "../components/Alertconfirm";
 import ColorPicker from "../components/ColorPicker";
-import { hasRealColor, DEFAULT_TEXT_COLOR, type TagColor } from "../constants/color";
+import {
+  hasRealColor,
+  resolveTextColor,
+  type TagColor,
+} from "../constants/color";
 import { useTodo } from "../Context/TodoProvider";
 import dayjs from "dayjs";
 import styles from "../assets/css/Todolist.module.css";
 import { type Todolist } from "../components/services";
+
+type ManageMode = "Add" | "Edit" | "Delete" | null;
+type TodoAction = "Add" | "Edit" | "Delete";
 
 const css = (...classNames: Array<string | false | null | undefined>) =>
   classNames
@@ -36,9 +43,7 @@ export default function Todolist() {
   // const [mydataTodolist, dispatch] = useReducer(todoReducer, []);
   const activeDay: string = day ?? dayjs().format("YYYY-MM-DD");
 
-  const [Statusmode, SetStatusmode] = useState<
-    "Add" | "Edit" | "Delete" | null
-  >(null);
+  const [Statusmode, SetStatusmode] = useState<ManageMode>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editOldDataInput, setEditOldDataInput] = useState<Partial<Todolist>>({
     name: "",
@@ -52,7 +57,7 @@ export default function Todolist() {
   >(undefined);
   const [Alert, setAlert] = useState<{
     isOpen: boolean;
-    action?: "Add" | "Edit" | "Delete";
+    action?: TodoAction;
     Item?: Partial<Todolist>;
   }>({ isOpen: false });
 
@@ -100,6 +105,17 @@ export default function Todolist() {
   const startAddMode = () => {
     resetTaskForm();
     SetStatusmode("Add");
+  };
+
+  const openTodoConfirm = (
+    action: TodoAction,
+    item: Partial<Todolist> = {},
+  ) => {
+    setAlert({
+      isOpen: true,
+      action,
+      Item: item,
+    });
   };
 
   //-----------------function updateDayCache ------------------
@@ -165,8 +181,8 @@ export default function Todolist() {
       }
 
       const todoDataToSave: Omit<Todolist, "id"> = {
-        name: todolist.name,
-        value: todolist.value || "",
+        name: todolist.name.trim(),
+        value: todolist.value?.trim() || "",
         complete: false,
         createdAt: new Date(),
         datekey: activeDay,
@@ -215,11 +231,16 @@ export default function Todolist() {
       if (!user?.uid) return;
 
       const updates: Partial<Todolist> = {
-        name: todolist.name ?? editOldDataInput.name,
-        value: todolist.value ?? editOldDataInput.value,
+        name: (todolist.name ?? editOldDataInput.name)?.trim(),
+        value: (todolist.value ?? editOldDataInput.value)?.trim() || "",
         color: selectedColor,
         textColor: selectedTextColor,
       };
+
+      if (!updates.name) {
+        alert("กรุณากรอกข้อมูล");
+        return;
+      }
 
       await services.updateTodo(user.uid, year, month, id, updates);
       updateDayCache(targetMonth, activeDay, (todos) =>
@@ -273,6 +294,7 @@ export default function Todolist() {
         todos.filter((t) => t.id !== id),
       );
       alert("Delete To Do Success");
+      resetTaskForm();
     } catch (error) {
       console.log(error);
     }
@@ -295,7 +317,11 @@ export default function Todolist() {
     setIsDayTransitioning(true);
 
     window.setTimeout(
-      () => navigate(`/to-do-list/${targetDay}`),
+      () => {
+        navigate(`/to-do-list/${targetDay}`);
+        setTrackDirection("");
+        setIsDayTransitioning(false);
+      },
       reduceMotion ? 0 : dayTransitionMs,
     );
   }
@@ -457,15 +483,11 @@ export default function Todolist() {
               <button
                 className={css("button", "primary")}
                 onClick={() =>
-                  setAlert({
-                    isOpen: true,
-                    Item: {
-                      name: todolist.name,
-                      value: todolist.value,
-                      color: selectedColor,
-                      textColor: selectedTextColor,
-                    },
-                    action: "Add",
+                  openTodoConfirm("Add", {
+                    name: todolist.name,
+                    value: todolist.value,
+                    color: selectedColor,
+                    textColor: selectedTextColor,
                   })
                 }
               >
@@ -570,16 +592,12 @@ export default function Todolist() {
                         <button
                           className={css("button", "success")}
                           onClick={() =>
-                            setAlert({
-                              isOpen: true,
-                              Item: {
-                                id: todo.id,
-                                name: todolist.name,
-                                value: todolist.value,
-                                color: selectedColor,
-                                textColor: selectedTextColor,
-                              },
-                              action: "Edit",
+                            openTodoConfirm("Edit", {
+                              id: todo.id,
+                              name: todolist.name,
+                              value: todolist.value,
+                              color: selectedColor,
+                              textColor: selectedTextColor,
                             })
                           }
                         >
@@ -598,7 +616,7 @@ export default function Todolist() {
                       <h3
                         className={css("itemTitle")}
                         style={{
-                          color: todo.textColor ?? DEFAULT_TEXT_COLOR,
+                          color: resolveTextColor(todo.color, todo.textColor),
                         }}
                       >
                         {todo.name}
@@ -625,14 +643,10 @@ export default function Todolist() {
                       <button
                         className={css("button", "danger")}
                         onClick={() => {
-                          setAlert({
-                            isOpen: true,
-                            Item: {
-                              id: todo.id,
-                              name: todo.name,
-                              value: todo.value,
-                            },
-                            action: "Delete",
+                          openTodoConfirm("Delete", {
+                            id: todo.id,
+                            name: todo.name,
+                            value: todo.value,
                           });
                         }}
                       >

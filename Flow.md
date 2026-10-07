@@ -1,6 +1,6 @@
 # Flow ทั้งระบบ - To Do List
 
-อัปเดตล่าสุด: 2026-10-06
+อัปเดตล่าสุด: 2026-10-07
 สถานะตรวจสอบ: `npm run lint` ผ่าน, `npm run build` ผ่าน
 
 เอกสารนี้อธิบาย flow ปัจจุบันของแอป: bootstrap, auth, routing, Firestore, cache, ระบบสี, Calendar และ Todolist
@@ -215,13 +215,15 @@ Flow:
 4. sort งานโดยสีจริงขึ้นก่อน แล้วงานที่ยังไม่เสร็จขึ้นก่อนงานที่ complete
 5. fetch รายเดือนแบบ cache-first ถ้ายังไม่มี cache
 6. mode หลักคือ `null | "Add" | "Edit" | "Delete"`
-7. Add/Edit/Delete เปิด `Alertconfirm` ก่อนเขียน Firestore
-8. หลังเขียนสำเร็จจะ patch cache ด้วย functional update
-9. toggle complete เขียน Firestore แล้ว patch cache ทันที
-10. ปุ่ม Add/Cancel/Exit Manage Mode ใช้ reset helper เดียวกัน เพื่อล้าง input, edit state, tag color และ text color ไม่ให้ค่าจากโหมดก่อนหน้าค้างไปโหมดถัดไป
-11. สีตัวอักษรของ todo item ใช้ `resolveTextColor(todo.color, todo.textColor)` จึงรองรับทั้งสีที่ user เลือกเองและ auto contrast จากพื้นหลัง
+7. Add/Edit/Delete เปิด `Alertconfirm` ผ่าน `openTodoConfirm()` ก่อนเขียน Firestore เพื่อลด logic ซ้ำของ modal payload
+8. Add/Edit trim `name` และ `value` ก่อนบันทึก และ Edit จะไม่ยอมบันทึกถ้า `name` ว่าง เพื่อไม่ให้เอกสารถูก parser ทิ้งตอนโหลดกลับ
+9. หลังเขียนสำเร็จจะ patch cache ด้วย functional update
+10. toggle complete เขียน Firestore แล้ว patch cache ทันที
+11. ปุ่ม Add/Cancel/Exit Manage Mode ใช้ reset helper เดียวกัน เพื่อล้าง input, edit state, tag color และ text color ไม่ให้ค่าจากโหมดก่อนหน้าค้างไปโหมดถัดไป
+12. สีตัวอักษรของ todo item ใช้ `resolveTextColor(todo.color, todo.textColor)` จึงรองรับทั้งสีที่ user เลือกเองและ auto contrast จากพื้นหลัง
+13. day slider ตั้ง `isDayTransitioning` ระหว่าง animation แล้ว reset `trackDirection`/`isDayTransitioning` หลัง `navigate()` เพื่อไม่ให้ปุ่มวันก่อนหน้า/ถัดไป disabled ค้าง
 
-หมายเหตุล่าสุด: dependency ของ fetch effect ใส่ครบแล้ว (`setTodosCache`, `todosCache`, `user.uid`, `monthKey`, `month`, `targetMonth`, `year`) ทำให้ lint ผ่านและ guard cache-first ยังทำงานเหมือนเดิม
+หมายเหตุล่าสุด: refactor confirm helper ของ Todolist, แก้ auto text color ให้ใช้ `resolveTextColor()` จริง, กัน edit ชื่อว่าง, trim input ก่อน save และแก้ day slider ไม่ให้ transition state ค้างหลังเปลี่ยนวัน
 
 หมายเหตุ 2026-10-06: refactor form reset ของ Todolist และแก้การแสดงสีตัวอักษร auto ให้ทำงานเหมือน Calendar
 
