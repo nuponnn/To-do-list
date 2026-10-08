@@ -380,6 +380,7 @@ export default function Calendar() {
     // setGetTodolist();
   }, [user?.uid, monthKey, month, setTodosCache, todosCache, year]);
 
+  // Memoize the calendar rendering to avoid unnecessary re-renders
   const calendar = useMemo(() => {
     return (
       <div className="calendar">
@@ -389,7 +390,7 @@ export default function Calendar() {
           </div>
         ))}
         {emptyfirstDays.map((_, index) => (
-          <div key={index} />
+          <div key={`start-${index}`}  />
         ))}
 
         {days.map((day) => {
@@ -448,22 +449,17 @@ export default function Calendar() {
           );
         })}
         {emtyLastDays.map((_, index) => (
-          <div key={index} />
+          <div key={`end-${index}`}  />
         ))}
       </div>
     );
   }, [
-    Selectedday,
-    activeQuickId,
-    currentDate,
-    days,
-    emptyfirstDays,
-    emtyLastDays,
-    isCurrentMonth,
-    monthKey,
-    pendingStamps,
-    todayDate,
-    todosCache,
+   Selectedday,
+  activeQuickId,
+  currentDate,
+  monthKey,
+  pendingStamps,
+  todosCache,
   ]);
 
   return (
