@@ -13,6 +13,7 @@ import ColorProvider from "./Context/ColorProvider";
 import AppReadyProviderContext, {
   useAppReady,
 } from "./Context/AppReadyProviderContext";
+import UserScope from "./Context/UserScope";
 function TodoSkeleton() {
   return (
     <div style={{ maxWidth: 500, margin: "40px auto", padding: 24 }}>
@@ -57,6 +58,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     {/* 2. ส่งค่า router เข้าไปใน Provider */}
     <Suspense fallback="Loading...">
       <AuthPreventContext>
+         <UserScope>
         <TodoProvider>
           <ColorProvider>
             <AppReadyProviderContext>
@@ -66,6 +68,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             </AppReadyProviderContext>
           </ColorProvider>
         </TodoProvider>
+        </UserScope>
       </AuthPreventContext>
     </Suspense>
   </StrictMode>,
