@@ -27,7 +27,7 @@ export default function ColorPicker({
   onChange,
   textValue,
   onTextChange,
-  label = "สีแท็ก",
+  label = "Tag color",
   showSaved = true,
 }: ColorPickerProps) {
   const { savedColors, saveColor, deleteColor } = useColors();
@@ -91,12 +91,12 @@ export default function ColorPicker({
           />
         ))}
 
-        <label className="cp-native" title="เลือกสีอิสระ">
+        <label className="cp-native" title="Pick any color">
           <input
             type="color"
             value={currentSwatch}
             onChange={(event) => handleNativeChange(event.target.value)}
-            aria-label="เลือกสีอิสระ"
+            aria-label="Pick any color"
           />
         </label>
 
@@ -105,8 +105,8 @@ export default function ColorPicker({
           className={`cp-dot cp-dot-none ${!value ? "cp-dot-active" : ""}`}
           onClick={handleClear}
           aria-pressed={!value}
-          title="ไม่มีสี"
-          aria-label="ไม่มีสี"
+          title="No color"
+          aria-label="No color"
         />
 
         <button
@@ -114,32 +114,32 @@ export default function ColorPicker({
           className="cp-save-btn"
           onClick={handleSave}
           disabled={!canSave || isSaving}
-          title="บันทึกสีนี้ไว้ใช้ครั้งต่อไป"
+          title="Save this color for later"
         >
-          {isSaved ? "saved" : "save"}
+          {isSaved ? "Saved ✓" : "Save color"}
         </button>
       </div>
 
       {onTextChange && (
         <div className="cp-text-row">
-          <span className="cp-label cp-text-label">สีตัวอักษร</span>
+          <span className="cp-label cp-text-label">Text color</span>
           <div className="cp-row">
             <button
               type="button"
               className={`cp-auto-btn ${!textValue ? "active" : ""}`}
               onClick={handleTextAuto}
               aria-pressed={!textValue}
-              title="ให้ระบบเลือกสีที่อ่านออกที่สุดอัตโนมัติ"
+              title="Automatically pick the most readable text color"
             >
-              อัตโนมัติ
+              Auto
             </button>
 
-            <label className="cp-native" title="เลือกสีตัวอักษรเอง">
+            <label className="cp-native" title="Pick a text color">
               <input
                 type="color"
                 value={textSwatch}
                 onChange={(event) => handleTextNativeChange(event.target.value)}
-                aria-label="เลือกสีตัวอักษรเอง"
+                aria-label="Pick a text color"
               />
             </label>
 
@@ -148,9 +148,9 @@ export default function ColorPicker({
                 type="button"
                 className="cp-auto-btn"
                 onClick={handleTextAuto}
-                title="กลับไปใช้สีอัตโนมัติ"
+                title="Go back to automatic text color"
               >
-                ล้าง
+                Clear
               </button>
             )}
           </div>
@@ -172,14 +172,14 @@ export default function ColorPicker({
                   style={{ backgroundColor: item.hex }}
                   onClick={() => onChange(item.hex)}
                   title={item.hex}
-                  aria-label={`ใช้สี ${item.hex}`}
+                  aria-label={`Use color ${item.hex}`}
                 />
                 <button
                   type="button"
                   className="cp-saved-del"
                   onClick={() => deleteColor(item.id)}
-                  title="ลบสีนี้"
-                  aria-label={`ลบสี ${item.hex}`}
+                  title="Delete this color"
+                  aria-label={`Delete color ${item.hex}`}
                 >
                   ✕
                 </button>
