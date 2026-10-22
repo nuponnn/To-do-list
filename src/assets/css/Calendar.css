@@ -108,13 +108,20 @@
 }
 
 /* สีประจำวันสไตล์ Soft Pastel (เข้ากับธีม ขาว-เทา) — ปรับค่าให้ผ่าน contrast 4.5:1 บนพื้นขาว */
-.day-sun { color: #dc2626; } /* อาทิตย์ */
-.day-mon { color: #b45309; } /* จันทร์ */
-.day-tue { color: #db2777; } /* อังคาร */
-.day-wed { color: #15803d; } /* พุธ */
-.day-thu { color: #c2410c; } /* พฤหัสบดี */
-.day-fri { color: #2563eb; } /* ศุกร์ */
-.day-sat { color: #7e22ce; } /* เสาร์ */
+.day-sun { color: #b01202;background-color: #fde0c4; } /* อาทิตย์ */
+.day-mon { color: #ffc107;background-color: #fff9c4; } /* จันทร์ */
+.day-tue { color: #ec4072;background-color: #fce4ec; } /* อังคาร */
+.day-wed { color: #42bd41;background-color: #d0f8ce; } /* พุธ */
+.day-thu { color: #ff9200;background-color: #fff8e1; } /* พฤหัสบดี */
+.day-fri { color: #25b6f6; background-color: #e1f5fe;} /* ศุกร์ */
+.day-sat { color: #9c2760; background-color: #f3c5f5;} /* เสาร์ */
+
+.day-day{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius:5px ;
+}
 
 .day-container {
   display: flex;

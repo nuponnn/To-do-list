@@ -385,7 +385,7 @@ export default function Calendar() {
     return (
       <div className="calendar">
         {DAYS_WITH_COLORS.map(({ name, color }) => (
-          <div key={name} className={color}>
+          <div key={name} className={`day-day ${color}`}>
             {name}
           </div>
         ))}
