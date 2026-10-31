@@ -79,7 +79,7 @@ export default function Calendar() {
 
   //---------------------------todo list---------------------------
   const [newQuickText, setNewQuickText] = useState<Partial<QuickTodo>>({
-    name: "",
+    name:"",value:""
   });
   const [selectedQuickColor, setSelectedQuickColor] = useState<
     TagColor | undefined
@@ -117,7 +117,7 @@ export default function Calendar() {
   };
 
   const resetCalendarComposer = () => {
-    setNewQuickText({ name: "" });
+    setNewQuickText({ name: "" ,value: ""});
     setSelectedQuickColor(undefined);
     setSelectedQuickTextColor(undefined);
     setActiveQuickId(null);
@@ -253,7 +253,7 @@ export default function Calendar() {
 
       // อัปเดต State หน้าจอทันที
       setQuickTodos((prev) => [...prev, { id: savedId, ...newItemData }]);
-      setNewQuickText({ name: "" });
+      setNewQuickText({ name: "" ,value:""});
       setSelectedQuickColor(undefined);
       setSelectedQuickTextColor(undefined);
     } catch (error) {
